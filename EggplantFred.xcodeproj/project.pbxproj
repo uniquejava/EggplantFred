@@ -1,0 +1,338 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1C91AA56C47647F78A6E6CAD /* EggplantFredApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607B8FF36C8C474C9B7F097D /* EggplantFredApp.swift */; };
+		C544598C127F4D188BE5FAE0 /* LauncherController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24DD1AB11EBB42EDB73A20A3 /* LauncherController.swift */; };
+		171BCC333B26499BB81E4D36 /* HotkeyMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E094AD615540420796906F5D /* HotkeyMonitor.swift */; };
+		382DAB29A0AA40D5AA37DBB5 /* HotkeyShortcut.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2060A0825F40EFA4BA8BA0 /* HotkeyShortcut.swift */; };
+		A0E580534CB849FF8C95143E /* AppEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94B1CF9DDCC4E3BB0F681F8 /* AppEntry.swift */; };
+		4315A6B4DEA44536822567F8 /* AppIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88615CCBA1944C6885424FFA /* AppIndex.swift */; };
+		4FE7B14690B040DABF79389A /* SearchEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04B97B4DAD804908B2A15785 /* SearchEngine.swift */; };
+		A54ED9C3F0D54A13973ADC5A /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18B799D466E4D649CA896FB /* SearchViewModel.swift */; };
+		9C66B76EE2924495AD1B6425 /* SearchWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E7B11EFB274E7FBDBD468A /* SearchWindowView.swift */; };
+		2B90D50409E94807BABA112C /* ResultRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9C0A31408C40148A1553D2 /* ResultRowView.swift */; };
+		E5FFC6533B5E465DB99BB5A2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64433D9DCECE4C9C8C2416B3 /* SettingsView.swift */; };
+		AAE9D83ED55F4F15BF669C87 /* AppLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE77754392BA4C1A89067167 /* AppLauncher.swift */; };
+		EC99FCF8B9B644528DF839A9 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BDDA01AFFA14374810BAB29 /* LaunchAtLogin.swift */; };
+		1CB7B1D6B500400493ACF5CF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = D7543AE5C2244D25A0D54636 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		5BD2C138B8CB4CEDA9C8A94F /* EggplantFred.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EggplantFred.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		607B8FF36C8C474C9B7F097D /* EggplantFredApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EggplantFredApp.swift; sourceTree = "<group>"; };
+		24DD1AB11EBB42EDB73A20A3 /* LauncherController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LauncherController.swift; sourceTree = "<group>"; };
+		E094AD615540420796906F5D /* HotkeyMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyMonitor.swift; sourceTree = "<group>"; };
+		7A2060A0825F40EFA4BA8BA0 /* HotkeyShortcut.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyShortcut.swift; sourceTree = "<group>"; };
+		C94B1CF9DDCC4E3BB0F681F8 /* AppEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEntry.swift; sourceTree = "<group>"; };
+		88615CCBA1944C6885424FFA /* AppIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIndex.swift; sourceTree = "<group>"; };
+		04B97B4DAD804908B2A15785 /* SearchEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchEngine.swift; sourceTree = "<group>"; };
+		F18B799D466E4D649CA896FB /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
+		D4E7B11EFB274E7FBDBD468A /* SearchWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchWindowView.swift; sourceTree = "<group>"; };
+		3B9C0A31408C40148A1553D2 /* ResultRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultRowView.swift; sourceTree = "<group>"; };
+		64433D9DCECE4C9C8C2416B3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AE77754392BA4C1A89067167 /* AppLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLauncher.swift; sourceTree = "<group>"; };
+		0BDDA01AFFA14374810BAB29 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
+		D7543AE5C2244D25A0D54636 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		10D58C0049954922BB84A6EA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1C6283FC49394373B9B23586 /* EggplantFred.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EggplantFred.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		CCC86B6E42B94297ADD415D9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AD41FF7EEEFB4C4DA7FCA219 = {
+			isa = PBXGroup;
+			children = (
+				23360A1D11484CF1A8E092C2 /* EggplantFred */,
+				C7AB5209475B4E848E1F4B06 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		C7AB5209475B4E848E1F4B06 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				5BD2C138B8CB4CEDA9C8A94F /* EggplantFred.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		23360A1D11484CF1A8E092C2 /* EggplantFred */ = {
+			isa = PBXGroup;
+			children = (
+				607B8FF36C8C474C9B7F097D /* EggplantFredApp.swift */,
+				2511DB120E724AB288A81216 /* Controllers */,
+				D423B0F10DA043419401C9DC /* Hotkey */,
+				8CFC4F1487B346B190153A8C /* Index */,
+				591CD4D573364657B17EF8B2 /* Search */,
+				E7888B72250043B0AFCF647C /* UI */,
+				6E6C57912DC04884A1D5F27F /* Services */,
+				D7543AE5C2244D25A0D54636 /* Assets.xcassets */,
+				10D58C0049954922BB84A6EA /* Info.plist */,
+				1C6283FC49394373B9B23586 /* EggplantFred.entitlements */,
+			);
+			path = EggplantFred;
+			sourceTree = "<group>";
+		};
+		2511DB120E724AB288A81216 /* Controllers */ = {
+			isa = PBXGroup;
+			children = (
+				24DD1AB11EBB42EDB73A20A3 /* LauncherController.swift */,
+			);
+			path = Controllers;
+			sourceTree = "<group>";
+		};
+		D423B0F10DA043419401C9DC /* Hotkey */ = {
+			isa = PBXGroup;
+			children = (
+				E094AD615540420796906F5D /* HotkeyMonitor.swift */,
+				7A2060A0825F40EFA4BA8BA0 /* HotkeyShortcut.swift */,
+			);
+			path = Hotkey;
+			sourceTree = "<group>";
+		};
+		8CFC4F1487B346B190153A8C /* Index */ = {
+			isa = PBXGroup;
+			children = (
+				C94B1CF9DDCC4E3BB0F681F8 /* AppEntry.swift */,
+				88615CCBA1944C6885424FFA /* AppIndex.swift */,
+			);
+			path = Index;
+			sourceTree = "<group>";
+		};
+		591CD4D573364657B17EF8B2 /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				04B97B4DAD804908B2A15785 /* SearchEngine.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
+		E7888B72250043B0AFCF647C /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				F18B799D466E4D649CA896FB /* SearchViewModel.swift */,
+				D4E7B11EFB274E7FBDBD468A /* SearchWindowView.swift */,
+				3B9C0A31408C40148A1553D2 /* ResultRowView.swift */,
+				64433D9DCECE4C9C8C2416B3 /* SettingsView.swift */,
+			);
+			path = UI;
+			sourceTree = "<group>";
+		};
+		6E6C57912DC04884A1D5F27F /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				AE77754392BA4C1A89067167 /* AppLauncher.swift */,
+				0BDDA01AFFA14374810BAB29 /* LaunchAtLogin.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B9D967BB8B7F4C5BA0F78089 /* EggplantFred */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E8B839BEADEE4E919E4C531F /* Build configuration list for PBXNativeTarget "EggplantFred" */;
+			buildPhases = (
+				27EB7129CD404F029D3CB944 /* Sources */,
+				CCC86B6E42B94297ADD415D9 /* Frameworks */,
+				719BC8B4EA634A04A5986959 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = EggplantFred;
+			productName = EggplantFred;
+			productReference = 5BD2C138B8CB4CEDA9C8A94F /* EggplantFred.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B42863D93DC54276A3C67AC6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					B9D967BB8B7F4C5BA0F78089 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+				};
+			};
+			buildConfigurationList = 9393BC3A31E9401ABC2288BD /* Build configuration list for PBXProject "EggplantFred" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AD41FF7EEEFB4C4DA7FCA219;
+			productRefGroup = C7AB5209475B4E848E1F4B06 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B9D967BB8B7F4C5BA0F78089 /* EggplantFred */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		719BC8B4EA634A04A5986959 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1CB7B1D6B500400493ACF5CF /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		27EB7129CD404F029D3CB944 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1C91AA56C47647F78A6E6CAD /* EggplantFredApp.swift in Sources */,
+				C544598C127F4D188BE5FAE0 /* LauncherController.swift in Sources */,
+				171BCC333B26499BB81E4D36 /* HotkeyMonitor.swift in Sources */,
+				382DAB29A0AA40D5AA37DBB5 /* HotkeyShortcut.swift in Sources */,
+				A0E580534CB849FF8C95143E /* AppEntry.swift in Sources */,
+				4315A6B4DEA44536822567F8 /* AppIndex.swift in Sources */,
+				4FE7B14690B040DABF79389A /* SearchEngine.swift in Sources */,
+				A54ED9C3F0D54A13973ADC5A /* SearchViewModel.swift in Sources */,
+				9C66B76EE2924495AD1B6425 /* SearchWindowView.swift in Sources */,
+				2B90D50409E94807BABA112C /* ResultRowView.swift in Sources */,
+				E5FFC6533B5E465DB99BB5A2 /* SettingsView.swift in Sources */,
+				AAE9D83ED55F4F15BF669C87 /* AppLauncher.swift in Sources */,
+				EC99FCF8B9B644528DF839A9 /* LaunchAtLogin.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		DDB7DBF1887E42239A3E280A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		0FA642DB128F4D048437F146 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+			};
+			name = Release;
+		};
+		07A7963D984A4DD0B3B9CC0E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = EggplantFred/EggplantFred.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = EggplantFred/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.eggplantfred.EggplantFred;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		1F75B361871D41059757C3F2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = EggplantFred/EggplantFred.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = EggplantFred/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.eggplantfred.EggplantFred;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9393BC3A31E9401ABC2288BD /* Build configuration list for PBXProject "EggplantFred" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DDB7DBF1887E42239A3E280A /* Debug */,
+				0FA642DB128F4D048437F146 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E8B839BEADEE4E919E4C531F /* Build configuration list for PBXNativeTarget "EggplantFred" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				07A7963D984A4DD0B3B9CC0E /* Debug */,
+				1F75B361871D41059757C3F2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = B42863D93DC54276A3C67AC6 /* Project object */;
+}
