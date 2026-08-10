@@ -7,22 +7,42 @@ final class HotkeyMonitor: @unchecked Sendable {
     private var shortcut: HotkeyShortcut = .doubleOption
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
-    private var lastOptionUp: CFAbsoluteTime = 0
-    private let doubleTapInterval: CFAbsoluteTime = 0.35
-    private var optionDown = false
+    /// Timestamp of the previous matching modifier *down* for double-tap detection.
+    private var lastModifierDown: CFAbsoluteTime = 0
+    private let doubleTapInterval: CFAbsoluteTime = 0.4
+    private var wasModifierDown = false
+    private var isPaused = false
     private let lock = NSLock()
+
+    var isRunning: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return eventTap != nil
+    }
+
+    /// Pause firing (e.g. while Preferences is recording a shortcut).
+    func setPaused(_ paused: Bool) {
+        lock.lock()
+        isPaused = paused
+        lastModifierDown = 0
+        wasModifierDown = false
+        lock.unlock()
+    }
 
     func updateShortcut(_ shortcut: HotkeyShortcut) {
         lock.lock()
         self.shortcut = shortcut
-        lastOptionUp = 0
-        optionDown = false
+        lastModifierDown = 0
+        wasModifierDown = false
         lock.unlock()
     }
 
     func start() {
         stop()
-        guard AXIsProcessTrusted() else { return }
+        guard AXIsProcessTrusted() else {
+            NSLog("EggplantFred: event tap skipped — Accessibility not trusted")
+            return
+        }
 
         let mask = (1 << CGEventType.flagsChanged.rawValue)
             | (1 << CGEventType.keyDown.rawValue)
@@ -37,7 +57,7 @@ final class HotkeyMonitor: @unchecked Sendable {
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
-            options: .listenOnly,
+            options: .defaultTap,
             eventsOfInterest: CGEventMask(mask),
             callback: callback,
             userInfo: refcon
@@ -79,12 +99,17 @@ final class HotkeyMonitor: @unchecked Sendable {
         }
 
         lock.lock()
+        let paused = isPaused
         let current = shortcut
         lock.unlock()
 
+        guard !paused else {
+            return Unmanaged.passUnretained(event)
+        }
+
         switch current {
-        case .doubleOption:
-            processDoubleOption(event: event, type: type)
+        case .doubleTap(let modifier):
+            processDoubleTap(event: event, type: type, modifier: modifier)
         case .keyCombo(let keyCode, let modifiers):
             processKeyCombo(event: event, type: type, keyCode: keyCode, modifiers: modifiers)
         }
@@ -92,41 +117,40 @@ final class HotkeyMonitor: @unchecked Sendable {
         return Unmanaged.passUnretained(event)
     }
 
-    private func processDoubleOption(event: CGEvent, type: CGEventType) {
+    /// Successive presses of the same modifier within `doubleTapInterval` (Alfred-style).
+    private func processDoubleTap(event: CGEvent, type: CGEventType, modifier: ModifierKind) {
         guard type == .flagsChanged else { return }
-        let flags = event.flags
-        let isOption = flags.contains(.maskAlternate)
+
         let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
-
-        guard keyCode == 58 || keyCode == 61 else { return }
-
-        var shouldFire = false
+        let flags = event.flags
+        let isDownNow = flags.contains(modifier.cgFlag)
+        let isTargetKey = modifier.keyCodes.contains(keyCode)
 
         lock.lock()
-        if isOption {
-            optionDown = true
+        let wasDown = wasModifierDown
+        let transitioned = isDownNow != wasDown
+        wasModifierDown = isDownNow
+
+        if !isTargetKey && !transitioned {
             lock.unlock()
             return
         }
 
-        guard optionDown else {
-            lock.unlock()
-            return
-        }
-        optionDown = false
-
-        let others: CGEventFlags = [.maskCommand, .maskControl, .maskShift]
-        if !flags.intersection(others).isEmpty {
+        if !flags.intersection(modifier.otherCGFlags).isEmpty {
+            lastModifierDown = 0
             lock.unlock()
             return
         }
 
-        let now = CFAbsoluteTimeGetCurrent()
-        if now - lastOptionUp <= doubleTapInterval {
-            lastOptionUp = 0
-            shouldFire = true
-        } else {
-            lastOptionUp = now
+        var shouldFire = false
+        if isDownNow && !wasDown {
+            let now = CFAbsoluteTimeGetCurrent()
+            if lastModifierDown > 0, now - lastModifierDown <= doubleTapInterval {
+                lastModifierDown = 0
+                shouldFire = true
+            } else {
+                lastModifierDown = now
+            }
         }
         lock.unlock()
 

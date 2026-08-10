@@ -3,133 +3,358 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var isRecording = false
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     @State private var launchAtLoginError: String?
-    @State private var eventMonitor: Any?
+
+    private let labelWidth: CGFloat = 130
 
     var body: some View {
-        Form {
-            Section("Hotkey") {
-                HStack {
-                    Text("Current")
-                    Spacer()
-                    Text(appState.hotkeySettings.shortcut.displayName)
-                        .foregroundStyle(.secondary)
-                        .monospaced()
-                }
-
-                HStack {
-                    Button(isRecording ? "Press a shortcut…" : "Record Shortcut") {
-                        beginRecording()
-                    }
-                    .disabled(isRecording)
-
-                    Button("Use Double Option") {
-                        endRecording()
-                        appState.applyHotkey(.doubleOption)
-                    }
-                }
-
-                if isRecording {
-                    Text("Press the key combination you want, or Esc to cancel.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Section("Permissions") {
-                HStack {
-                    Label(
-                        appState.accessibilityTrusted ? "Accessibility granted" : "Accessibility required",
-                        systemImage: appState.accessibilityTrusted ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
-                    )
-                    .foregroundStyle(appState.accessibilityTrusted ? .green : .orange)
-                    Spacer()
-                    Button(appState.accessibilityTrusted ? "Recheck" : "Grant…") {
-                        appState.refreshAccessibilityStatus()
-                        if !appState.accessibilityTrusted {
-                            appState.requestAccessibility()
-                            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                                NSWorkspace.shared.open(url)
-                            }
-                        }
-                        appState.hotkeyMonitor.restart()
-                    }
-                }
-
-                Text("Global hotkeys (including Double Option) need Accessibility access.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section("General") {
-                Toggle("Launch at Login", isOn: Binding(
-                    get: { launchAtLoginEnabled },
-                    set: { newValue in
-                        do {
-                            launchAtLoginEnabled = try LaunchAtLogin.setEnabled(newValue)
-                            launchAtLoginError = nil
-                        } catch {
-                            launchAtLoginError = error.localizedDescription
-                            launchAtLoginEnabled = LaunchAtLogin.isEnabled
-                        }
-                    }
-                ))
-
-                if let launchAtLoginError {
-                    Text(launchAtLoginError)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
-                Button("Refresh App Index") {
-                    appState.appIndex.refresh()
-                }
-            }
+        VStack(alignment: .leading, spacing: 22) {
+            startupRow
+            hotkeyRow
+            permissionsRow
+            Spacer(minLength: 0)
         }
-        .formStyle(.grouped)
-        .frame(width: 460, height: 360)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 28)
+        .frame(width: 560, height: 320)
+        .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             appState.refreshAccessibilityStatus()
             launchAtLoginEnabled = LaunchAtLogin.isEnabled
+            appState.ensureHotkeyMonitorRunning()
         }
-        .onDisappear {
-            endRecording()
+    }
+
+    // MARK: - Rows
+
+    private var startupRow: some View {
+        settingsRow(label: "Startup:") {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 12) {
+                    Toggle("Launch EggplantFred at login", isOn: Binding(
+                        get: { launchAtLoginEnabled },
+                        set: { newValue in
+                            do {
+                                launchAtLoginEnabled = try LaunchAtLogin.setEnabled(newValue)
+                                launchAtLoginError = nil
+                            } catch {
+                                launchAtLoginError = error.localizedDescription
+                                launchAtLoginEnabled = LaunchAtLogin.isEnabled
+                            }
+                        }
+                    ))
+                    .toggleStyle(.checkbox)
+
+                    Button("Quit EggplantFred") {
+                        NSApplication.shared.terminate(nil)
+                    }
+                }
+
+                Text("If selected, EggplantFred will still launch at login after using the “Quit EggplantFred” button.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let launchAtLoginError {
+                    Text(launchAtLoginError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.red)
+                }
+            }
         }
+    }
+
+    private var hotkeyRow: some View {
+        settingsRow(label: "Hotkey:") {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    HotkeyRecorderRepresentable(
+                        shortcut: appState.hotkeySettings.shortcut,
+                        onShortcutChange: { appState.applyHotkey($0) }
+                    )
+                    .frame(height: 36)
+
+                    Button {
+                        appState.applyHotkey(.doubleOption)
+                    } label: {
+                        Image(systemName: "questionmark.circle")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Reset to ⌥ double tap")
+                }
+
+                Text("Click the field, then double-tap ⌃ / ⌥ / ⇧ / ⌘, or type a shortcut (Esc cancels). ? resets to ⌥ double tap.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var permissionsRow: some View {
+        settingsRow(label: "Permissions:") {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    Button("Request Permissions...") {
+                        appState.requestAccessibility()
+                        appState.openAccessibilitySettings()
+                    }
+
+                    if appState.accessibilityTrusted {
+                        Label("Granted", systemImage: "checkmark.circle.fill")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.green)
+                    } else {
+                        Label("Required", systemImage: "exclamationmark.triangle.fill")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.orange)
+                    }
+                }
+
+                Text("EggplantFred requires Accessibility permission to listen for global hotkeys such as ⌥ double tap.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func settingsRow<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Text(label)
+                .font(.system(size: 13))
+                .frame(width: labelWidth, alignment: .trailing)
+                .padding(.top, 4)
+
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+// MARK: - AppKit hotkey recorder
+
+private struct HotkeyRecorderRepresentable: NSViewRepresentable {
+    let shortcut: HotkeyShortcut
+    let onShortcutChange: (HotkeyShortcut) -> Void
+
+    func makeNSView(context: Context) -> HotkeyRecorderView {
+        let view = HotkeyRecorderView()
+        view.shortcut = shortcut
+        view.onShortcutChange = onShortcutChange
+        return view
+    }
+
+    func updateNSView(_ nsView: HotkeyRecorderView, context: Context) {
+        nsView.shortcut = shortcut
+        nsView.onShortcutChange = onShortcutChange
+        nsView.refreshDisplay()
+    }
+}
+
+final class HotkeyRecorderView: NSView {
+    var shortcut: HotkeyShortcut = .doubleOption
+    var onShortcutChange: ((HotkeyShortcut) -> Void)?
+
+    private var isRecording = false
+    private var lastTapModifier: ModifierKind?
+    private var lastTapTime: CFAbsoluteTime = 0
+    private var downModifiers: Set<ModifierKind> = []
+
+    private let accent = NSColor(red: 0.45, green: 0.22, blue: 0.72, alpha: 1)
+    private let label = NSTextField(labelWithString: "")
+    private let glyphsLabel = NSTextField(labelWithString: "⌃ ⌥ ⇧ ⌘")
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.cornerRadius = 6
+        layer?.borderWidth = 1
+        layer?.borderColor = NSColor.separatorColor.cgColor
+        layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
+
+        glyphsLabel.font = .systemFont(ofSize: 13)
+        glyphsLabel.textColor = .secondaryLabelColor
+        glyphsLabel.isSelectable = false
+        glyphsLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.textColor = accent
+        label.isSelectable = false
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        addSubview(glyphsLabel)
+        addSubview(label)
+
+        NSLayoutConstraint.activate([
+            glyphsLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
+            glyphsLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            label.leadingAnchor.constraint(equalTo: glyphsLabel.trailingAnchor, constant: 10),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+        ])
+
+        refreshDisplay()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var acceptsFirstResponder: Bool { true }
+    override var canBecomeKeyView: Bool { true }
+
+    override func mouseDown(with event: NSEvent) {
+        window?.makeFirstResponder(self)
+        beginRecording()
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let ok = super.becomeFirstResponder()
+        if ok { beginRecording() }
+        return ok
+    }
+
+    override func resignFirstResponder() -> Bool {
+        endRecording(cancelOnly: true)
+        return super.resignFirstResponder()
+    }
+
+    override func keyDown(with event: NSEvent) {
+        guard isRecording else {
+            super.keyDown(with: event)
+            return
+        }
+
+        if event.keyCode == 53 { // Esc
+            endRecording(cancelOnly: true)
+            window?.makeFirstResponder(nil)
+            return
+        }
+
+        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
+        guard !modifiers.isEmpty else { return }
+
+        commit(.keyCombo(keyCode: event.keyCode, modifiers: modifiers.rawValue))
+    }
+
+    override func flagsChanged(with event: NSEvent) {
+        guard isRecording else {
+            super.flagsChanged(with: event)
+            return
+        }
+
+        let keyCode = Int64(event.keyCode)
+        guard let kind = ModifierKind.from(keyCode: keyCode) else { return }
+
+        let isDown = event.modifierFlags.contains(kind.nsFlag)
+        let othersDown = ModifierKind.allCases
+            .filter { $0 != kind }
+            .contains { event.modifierFlags.contains($0.nsFlag) }
+
+        if othersDown {
+            lastTapModifier = nil
+            lastTapTime = 0
+            downModifiers = Set(ModifierKind.allCases.filter { event.modifierFlags.contains($0.nsFlag) })
+            return
+        }
+
+        if isDown {
+            guard !downModifiers.contains(kind) else { return }
+            downModifiers.insert(kind)
+
+            let now = CFAbsoluteTimeGetCurrent()
+            if lastTapModifier == kind, now - lastTapTime <= 0.4 {
+                lastTapModifier = nil
+                lastTapTime = 0
+                commit(.doubleTap(modifier: kind))
+            } else {
+                lastTapModifier = kind
+                lastTapTime = now
+            }
+        } else {
+            downModifiers.remove(kind)
+        }
+    }
+
+    func refreshDisplay() {
+        if isRecording {
+            label.stringValue = "Type shortcut…"
+            label.textColor = .secondaryLabelColor
+            layer?.borderColor = accent.cgColor
+            updateGlyphColors(highlight: nil, flags: [])
+        } else {
+            label.stringValue = shortcut.displayName
+            label.textColor = accent
+            layer?.borderColor = NSColor.separatorColor.cgColor
+            switch shortcut {
+            case .doubleTap(let modifier):
+                updateGlyphColors(highlight: modifier, flags: [])
+            case .keyCombo(_, let modifiers):
+                updateGlyphColors(
+                    highlight: nil,
+                    flags: NSEvent.ModifierFlags(rawValue: modifiers)
+                )
+            }
+        }
+    }
+
+    private func updateGlyphColors(highlight: ModifierKind?, flags: NSEvent.ModifierFlags) {
+        let base = NSColor.secondaryLabelColor.withAlphaComponent(0.55)
+        let on = accent
+        let parts: [(String, Bool)] = [
+            ("⌃", highlight == .control || flags.contains(.control)),
+            ("⌥", highlight == .option || flags.contains(.option)),
+            ("⇧", highlight == .shift || flags.contains(.shift)),
+            ("⌘", highlight == .command || flags.contains(.command)),
+        ]
+        let attributed = NSMutableAttributedString()
+        for (index, part) in parts.enumerated() {
+            if index > 0 {
+                attributed.append(NSAttributedString(string: " "))
+            }
+            attributed.append(NSAttributedString(
+                string: part.0,
+                attributes: [
+                    .foregroundColor: part.1 ? on : base,
+                    .font: NSFont.systemFont(ofSize: 13),
+                ]
+            ))
+        }
+        glyphsLabel.attributedStringValue = attributed
     }
 
     private func beginRecording() {
-        endRecording()
+        guard !isRecording else {
+            refreshDisplay()
+            return
+        }
         isRecording = true
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.keyCode == 53 { // Esc
-                Task { @MainActor in
-                    self.endRecording()
-                }
-                return nil
-            }
+        lastTapModifier = nil
+        lastTapTime = 0
+        downModifiers = []
+        AppState.shared.hotkeyMonitor.setPaused(true)
+        refreshDisplay()
+    }
 
-            let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
-            guard !modifiers.isEmpty else { return event }
-
-            let shortcut = HotkeyShortcut.keyCombo(
-                keyCode: event.keyCode,
-                modifiers: modifiers.rawValue
-            )
-            Task { @MainActor in
-                self.appState.applyHotkey(shortcut)
-                self.endRecording()
-            }
-            return nil
+    private func endRecording(cancelOnly: Bool) {
+        guard isRecording else { return }
+        isRecording = false
+        AppState.shared.hotkeyMonitor.setPaused(false)
+        if cancelOnly {
+            refreshDisplay()
         }
     }
 
-    private func endRecording() {
-        if let eventMonitor {
-            NSEvent.removeMonitor(eventMonitor)
-            self.eventMonitor = nil
-        }
+    private func commit(_ shortcut: HotkeyShortcut) {
         isRecording = false
+        AppState.shared.hotkeyMonitor.setPaused(false)
+        self.shortcut = shortcut
+        refreshDisplay()
+        onShortcutChange?(shortcut)
+        window?.makeFirstResponder(nil)
     }
 }

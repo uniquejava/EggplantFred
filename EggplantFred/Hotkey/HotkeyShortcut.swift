@@ -1,17 +1,88 @@
 import AppKit
 import Foundation
 
-enum HotkeyShortcut: Equatable, Codable, Hashable {
-    case doubleOption
+/// A single modifier that can be double-tapped to invoke the launcher (Alfred-style).
+enum ModifierKind: String, Codable, Hashable, CaseIterable {
+    case control
+    case option
+    case shift
+    case command
+
+    var symbol: String {
+        switch self {
+        case .control: return "⌃"
+        case .option: return "⌥"
+        case .shift: return "⇧"
+        case .command: return "⌘"
+        }
+    }
+
+    var displayName: String { "\(symbol) double tap" }
+
+    var nsFlag: NSEvent.ModifierFlags {
+        switch self {
+        case .control: return .control
+        case .option: return .option
+        case .shift: return .shift
+        case .command: return .command
+        }
+    }
+
+    var cgFlag: CGEventFlags {
+        switch self {
+        case .control: return .maskControl
+        case .option: return .maskAlternate
+        case .shift: return .maskShift
+        case .command: return .maskCommand
+        }
+    }
+
+    /// Left/right key codes (HIToolbox virtual key codes).
+    var keyCodes: Set<Int64> {
+        switch self {
+        case .control: return [59, 62]
+        case .option: return [58, 61]
+        case .shift: return [56, 60]
+        case .command: return [55, 54]
+        }
+    }
+
+    static func from(keyCode: Int64) -> ModifierKind? {
+        for kind in allCases where kind.keyCodes.contains(keyCode) {
+            return kind
+        }
+        return nil
+    }
+
+    /// The other three modifiers — used to reject chords while detecting a pure double-tap.
+    var otherCGFlags: CGEventFlags {
+        var flags: CGEventFlags = []
+        for kind in ModifierKind.allCases where kind != self {
+            flags.insert(kind.cgFlag)
+        }
+        return flags
+    }
+}
+
+enum HotkeyShortcut: Equatable, Hashable {
+    case doubleTap(modifier: ModifierKind)
     case keyCombo(keyCode: UInt16, modifiers: UInt)
+
+    /// Default Alfred-like binding.
+    static var doubleOption: HotkeyShortcut { .doubleTap(modifier: .option) }
 
     var displayName: String {
         switch self {
-        case .doubleOption:
-            return "Double Option"
+        case .doubleTap(let modifier):
+            return modifier.displayName
         case .keyCombo(let keyCode, let modifiers):
             return Self.describe(keyCode: keyCode, modifiers: NSEvent.ModifierFlags(rawValue: modifiers))
         }
+    }
+
+    var doubleTapModifier: ModifierKind? {
+        if case .doubleTap(let modifier) = self { return modifier }
+        return nil
     }
 
     static func describe(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> String {
@@ -50,6 +121,55 @@ enum HotkeyShortcut: Equatable, Codable, Hashable {
         33: "[", 34: "I", 35: "P", 37: "L", 38: "J", 39: "'", 40: "K", 41: ";",
         42: "\\", 43: ",", 44: "/", 45: "N", 46: "M", 47: ".", 50: "`"
     ]
+}
+
+extension HotkeyShortcut: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case doubleTap
+        case doubleOption // legacy
+        case keyCombo
+    }
+
+    private enum DoubleTapKeys: String, CodingKey {
+        case modifier
+    }
+
+    private enum KeyComboKeys: String, CodingKey {
+        case keyCode
+        case modifiers
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case .doubleTap(let modifier):
+            var nested = container.nestedContainer(keyedBy: DoubleTapKeys.self, forKey: .doubleTap)
+            try nested.encode(modifier, forKey: .modifier)
+        case .keyCombo(let keyCode, let modifiers):
+            var nested = container.nestedContainer(keyedBy: KeyComboKeys.self, forKey: .keyCombo)
+            try nested.encode(keyCode, forKey: .keyCode)
+            try nested.encode(modifiers, forKey: .modifiers)
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if container.contains(.doubleTap) {
+            let nested = try container.nestedContainer(keyedBy: DoubleTapKeys.self, forKey: .doubleTap)
+            let modifier = try nested.decode(ModifierKind.self, forKey: .modifier)
+            self = .doubleTap(modifier: modifier)
+        } else if container.contains(.doubleOption) {
+            // Migrate older builds that only stored `doubleOption`.
+            self = .doubleTap(modifier: .option)
+        } else if container.contains(.keyCombo) {
+            let nested = try container.nestedContainer(keyedBy: KeyComboKeys.self, forKey: .keyCombo)
+            let keyCode = try nested.decode(UInt16.self, forKey: .keyCode)
+            let modifiers = try nested.decode(UInt.self, forKey: .modifiers)
+            self = .keyCombo(keyCode: keyCode, modifiers: modifiers)
+        } else {
+            self = .doubleTap(modifier: .option)
+        }
+    }
 }
 
 @MainActor

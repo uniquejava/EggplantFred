@@ -1,4 +1,6 @@
 import AppKit
+import Combine
+import QuartzCore
 import SwiftUI
 
 @MainActor
@@ -8,8 +10,13 @@ final class LauncherController: NSObject, ObservableObject {
     private var viewModel: SearchViewModel?
     private var localMonitor: Any?
     private var resignObserver: NSObjectProtocol?
+    private var sizeCancellable: AnyCancellable?
 
     @Published var isVisible = false
+
+    private let panelWidth = SearchWindowView.panelWidth
+    private let compactHeight = SearchWindowView.compactHeight
+    private let expandedHeight = SearchWindowView.expandedHeight
 
     func configure(appIndex: AppIndex) {
         self.appIndex = appIndex
@@ -28,6 +35,7 @@ final class LauncherController: NSObject, ObservableObject {
         if panel == nil {
             createPanel(appIndex: appIndex)
         }
+        resizePanel(hasResults: false, animate: false)
         positionPanel()
         guard let panel else { return }
 
@@ -61,12 +69,19 @@ final class LauncherController: NSObject, ObservableObject {
         }
         self.viewModel = viewModel
 
+        sizeCancellable = viewModel.$results
+            .receive(on: RunLoop.main)
+            .sink { [weak self] results in
+                guard let self, self.isVisible else { return }
+                self.resizePanel(hasResults: !results.isEmpty, animate: true)
+            }
+
         let root = SearchWindowView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: root)
-        hostingView.frame = NSRect(x: 0, y: 0, width: 720, height: 480)
+        hostingView.frame = NSRect(x: 0, y: 0, width: panelWidth, height: compactHeight)
 
         let panel = KeyablePanel(
-            contentRect: NSRect(x: 0, y: 0, width: 720, height: 480),
+            contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: compactHeight),
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -97,6 +112,40 @@ final class LauncherController: NSObject, ObservableObject {
             Task { @MainActor in
                 self?.hide()
             }
+        }
+    }
+
+    private func resizePanel(hasResults: Bool, animate: Bool) {
+        guard let panel else { return }
+        let height = hasResults ? expandedHeight : compactHeight
+        guard abs(panel.frame.height - height) > 0.5 else {
+            if let hosting = panel.contentView {
+                hosting.frame = NSRect(x: 0, y: 0, width: panelWidth, height: height)
+            }
+            return
+        }
+
+        let frame = panel.frame
+        // Keep the top edge fixed so the list grows downward (Alfred-like).
+        let newFrame = NSRect(
+            x: frame.origin.x,
+            y: frame.maxY - height,
+            width: panelWidth,
+            height: height
+        )
+
+        if let hosting = panel.contentView {
+            hosting.frame = NSRect(x: 0, y: 0, width: panelWidth, height: height)
+        }
+
+        if animate {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.14
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().setFrame(newFrame, display: true)
+            }
+        } else {
+            panel.setFrame(newFrame, display: true)
         }
     }
 
@@ -141,7 +190,9 @@ final class LauncherController: NSObject, ObservableObject {
         let width = panel.frame.width
         let height = panel.frame.height
         let x = visible.midX - width / 2
-        let y = visible.maxY - height - 120
+        // Compact bar sits higher; when expanded it grows downward from this top.
+        let topY = visible.maxY - 140
+        let y = topY - height
         panel.setFrame(NSRect(x: x, y: y, width: width, height: height), display: true)
     }
 }

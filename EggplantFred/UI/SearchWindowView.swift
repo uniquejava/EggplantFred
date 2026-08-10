@@ -5,13 +5,24 @@ struct SearchWindowView: View {
     @ObservedObject var viewModel: SearchViewModel
     @FocusState private var queryFocused: Bool
 
+    /// Compact bar height when there are no matches; expands when results appear.
+    static let compactHeight: CGFloat = 64
+    static let expandedHeight: CGFloat = 480
+    static let panelWidth: CGFloat = 720
+
+    var showsResults: Bool { !viewModel.results.isEmpty }
+
     var body: some View {
         VStack(spacing: 0) {
             searchBar
-            Divider().opacity(0.25)
-            resultsList
+
+            if showsResults {
+                Divider().opacity(0.25)
+                resultsList
+            }
         }
-        .frame(width: 720, height: 480)
+        .frame(width: Self.panelWidth)
+        .frame(height: showsResults ? Self.expandedHeight : Self.compactHeight, alignment: .top)
         .background(WindowBackground())
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
@@ -19,6 +30,7 @@ struct SearchWindowView: View {
                 .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.35), radius: 28, y: 12)
+        .animation(.easeOut(duration: 0.14), value: showsResults)
         .onAppear {
             queryFocused = true
         }
@@ -31,17 +43,18 @@ struct SearchWindowView: View {
         HStack(spacing: 12) {
             TextField("", text: $viewModel.query, prompt: Text("Search apps"))
                 .textFieldStyle(.plain)
-                .font(.system(size: 28, weight: .regular))
+                .font(.system(size: 26, weight: .regular))
                 .focused($queryFocused)
                 .onSubmit { viewModel.openSelected() }
 
             Image(systemName: "magnifyingglass.circle.fill")
-                .font(.system(size: 28))
+                .font(.system(size: 26))
                 .foregroundStyle(.secondary)
                 .symbolRenderingMode(.hierarchical)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.vertical, 14)
+        .frame(height: Self.compactHeight)
     }
 
     private var resultsList: some View {

@@ -15,10 +15,14 @@ struct EggplantFredApp: App {
 
             Divider()
 
-            Button("Settings…") {
-                appState.openSettings()
+            SettingsLink {
+                Text("Preferences...")
             }
             .keyboardShortcut(",", modifiers: [.command])
+            .simultaneousGesture(TapGesture().onEnded {
+                // Menu bar (LSUIElement) apps need an explicit activate so Settings comes forward.
+                NSApp.activate(ignoringOtherApps: true)
+            })
 
             Divider()
 
@@ -31,6 +35,14 @@ struct EggplantFredApp: App {
         Settings {
             SettingsView()
                 .environmentObject(appState)
+                .onAppear {
+                    // Bring Preferences above other apps; show briefly in Dock while open.
+                    NSApp.setActivationPolicy(.regular)
+                    NSApp.activate(ignoringOtherApps: true)
+                }
+                .onDisappear {
+                    NSApp.setActivationPolicy(.accessory)
+                }
         }
     }
 }
@@ -40,6 +52,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         AppState.shared.start()
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        AppState.shared.ensureHotkeyMonitorRunning()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -58,6 +74,8 @@ final class AppState: ObservableObject {
 
     @Published var accessibilityTrusted = false
 
+    private var accessibilityPollTimer: Timer?
+
     private init() {}
 
     func start() {
@@ -69,6 +87,7 @@ final class AppState: ObservableObject {
         hotkeyMonitor.updateShortcut(hotkeySettings.shortcut)
         hotkeyMonitor.start()
         launcher.configure(appIndex: appIndex)
+        startAccessibilityPollingIfNeeded()
 
         if !accessibilityTrusted {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
@@ -83,20 +102,35 @@ final class AppState: ObservableObject {
 
         let alert = NSAlert()
         alert.messageText = "Accessibility Access Needed"
-        alert.informativeText = "EggplantFred needs Accessibility permission to listen for global hotkeys like Double Option."
+        alert.informativeText = """
+        EggplantFred needs Accessibility to listen for ⌥ double tap.
+
+        If EggplantFred is already checked in System Settings but hotkeys still fail:
+        1. Quit EggplantFred
+        2. Run in Terminal: tccutil reset Accessibility com.eggplantfred.EggplantFred
+        3. Reopen the app and enable it again when prompted
+
+        (Ad-hoc rebuilds used to invalidate permission even when the checkbox stayed on. The project now uses your Apple Development certificate so this should stop happening.)
+        """
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Copy Reset Command")
         alert.addButton(withTitle: "Later")
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
             requestAccessibility()
-            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                NSWorkspace.shared.open(url)
-            }
+            openAccessibilitySettings()
+        } else if response == .alertSecondButtonReturn {
+            let cmd = "tccutil reset Accessibility com.eggplantfred.EggplantFred"
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(cmd, forType: .string)
+            openAccessibilitySettings()
         }
     }
 
     func stop() {
+        accessibilityPollTimer?.invalidate()
+        accessibilityPollTimer = nil
         hotkeyMonitor.stop()
     }
 
@@ -104,23 +138,46 @@ final class AppState: ObservableObject {
         accessibilityTrusted = AXIsProcessTrusted()
     }
 
+    /// After the user grants Accessibility in System Settings, rebuild the event tap.
+    func ensureHotkeyMonitorRunning() {
+        let wasTrusted = accessibilityTrusted
+        refreshAccessibilityStatus()
+        if accessibilityTrusted {
+            accessibilityPollTimer?.invalidate()
+            accessibilityPollTimer = nil
+            if !wasTrusted || !hotkeyMonitor.isRunning {
+                hotkeyMonitor.restart()
+            }
+        } else {
+            startAccessibilityPollingIfNeeded()
+        }
+    }
+
+    private func startAccessibilityPollingIfNeeded() {
+        guard !AXIsProcessTrusted() else { return }
+        guard accessibilityPollTimer == nil else { return }
+        accessibilityPollTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.ensureHotkeyMonitorRunning()
+            }
+        }
+    }
+
     func requestAccessibility() {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         accessibilityTrusted = AXIsProcessTrustedWithOptions(options)
-        hotkeyMonitor.restart()
+        ensureHotkeyMonitorRunning()
     }
 
-    func openSettings() {
-        NSApp.activate(ignoringOtherApps: true)
-        if #available(macOS 14.0, *) {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        } else {
-            NSApp.sendAction(Selector(("showPreferencesWindow:")), to: nil, from: nil)
+    func openAccessibilitySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
         }
     }
 
     func applyHotkey(_ shortcut: HotkeyShortcut) {
         hotkeySettings.shortcut = shortcut
         hotkeyMonitor.updateShortcut(shortcut)
+        objectWillChange.send()
     }
 }
