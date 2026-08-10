@@ -178,6 +178,10 @@ final class AppState: ObservableObject {
     func applyHotkey(_ shortcut: HotkeyShortcut) {
         hotkeySettings.shortcut = shortcut
         hotkeyMonitor.updateShortcut(shortcut)
+        hotkeyMonitor.setPaused(false)
+        if !hotkeyMonitor.isRunning {
+            ensureHotkeyMonitorRunning()
+        }
         objectWillChange.send()
     }
 }

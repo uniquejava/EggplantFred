@@ -85,6 +85,14 @@ enum HotkeyShortcut: Equatable, Hashable {
         return nil
     }
 
+    /// Non-modifier key label for key combos (e.g. "P", "Space").
+    var comboKeyLabel: String? {
+        if case .keyCombo(let keyCode, _) = self {
+            return Self.keyName(for: keyCode)
+        }
+        return nil
+    }
+
     static func describe(keyCode: UInt16, modifiers: NSEvent.ModifierFlags) -> String {
         var parts: [String] = []
         if modifiers.contains(.control) { parts.append("⌃") }

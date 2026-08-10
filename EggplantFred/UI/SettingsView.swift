@@ -24,6 +24,10 @@ struct SettingsView: View {
             launchAtLoginEnabled = LaunchAtLogin.isEnabled
             appState.ensureHotkeyMonitorRunning()
         }
+        .onDisappear {
+            // Safety: never leave the global hotkey permanently paused if the recorder was focused.
+            appState.hotkeyMonitor.setPaused(false)
+        }
     }
 
     // MARK: - Rows
@@ -86,7 +90,7 @@ struct SettingsView: View {
                     .help("Reset to ⌥ double tap")
                 }
 
-                Text("Click the field, then double-tap ⌃ / ⌥ / ⇧ / ⌘, or type a shortcut (Esc cancels). ? resets to ⌥ double tap.")
+                Text("Click the field, then double-tap ⌃ / ⌥ / ⇧ / ⌘ or type a shortcut — changes apply immediately while focused. Esc or click away to finish.")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -166,7 +170,6 @@ final class HotkeyRecorderView: NSView {
 
     private let accent = NSColor(red: 0.45, green: 0.22, blue: 0.72, alpha: 1)
     private let label = NSTextField(labelWithString: "")
-    private let glyphsLabel = NSTextField(labelWithString: "⌃ ⌥ ⇧ ⌘")
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -176,24 +179,13 @@ final class HotkeyRecorderView: NSView {
         layer?.borderColor = NSColor.separatorColor.cgColor
         layer?.backgroundColor = NSColor.textBackgroundColor.cgColor
 
-        glyphsLabel.font = .systemFont(ofSize: 13)
-        glyphsLabel.textColor = .secondaryLabelColor
-        glyphsLabel.isSelectable = false
-        glyphsLabel.translatesAutoresizingMaskIntoConstraints = false
-
         label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = accent
         label.isSelectable = false
         label.translatesAutoresizingMaskIntoConstraints = false
-
-        addSubview(glyphsLabel)
         addSubview(label)
 
         NSLayoutConstraint.activate([
-            glyphsLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            glyphsLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
-
-            label.leadingAnchor.constraint(equalTo: glyphsLabel.trailingAnchor, constant: 10),
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             label.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12),
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
@@ -270,7 +262,13 @@ final class HotkeyRecorderView: NSView {
             if lastTapModifier == kind, now - lastTapTime <= 0.4 {
                 lastTapModifier = nil
                 lastTapTime = 0
-                commit(.doubleTap(modifier: kind))
+                let next = HotkeyShortcut.doubleTap(modifier: kind)
+                // Same as the already-saved binding → let the global monitor open the launcher.
+                if next == shortcut {
+                    resetTapState()
+                    return
+                }
+                commit(next)
             } else {
                 lastTapModifier = kind
                 lastTapTime = now
@@ -281,50 +279,67 @@ final class HotkeyRecorderView: NSView {
     }
 
     func refreshDisplay() {
-        if isRecording {
-            label.stringValue = "Type shortcut…"
-            label.textColor = .secondaryLabelColor
-            layer?.borderColor = accent.cgColor
-            updateGlyphColors(highlight: nil, flags: [])
-        } else {
-            label.stringValue = shortcut.displayName
-            label.textColor = accent
-            layer?.borderColor = NSColor.separatorColor.cgColor
-            switch shortcut {
-            case .doubleTap(let modifier):
-                updateGlyphColors(highlight: modifier, flags: [])
-            case .keyCombo(_, let modifiers):
-                updateGlyphColors(
-                    highlight: nil,
-                    flags: NSEvent.ModifierFlags(rawValue: modifiers)
-                )
-            }
+        // Focused: accent border; always show the current shortcut (ready for the next input).
+        layer?.borderColor = isRecording ? accent.cgColor : NSColor.separatorColor.cgColor
+
+        switch shortcut {
+        case .doubleTap(let modifier):
+            label.attributedStringValue = alfredStyleString(
+                activeModifiers: [modifier],
+                suffix: "double tap",
+                suffixColor: accent
+            )
+        case .keyCombo(_, let modifierRaw):
+            let flags: NSEvent.ModifierFlags = .init(rawValue: modifierRaw)
+            var active: [ModifierKind] = []
+            if flags.contains(.control) { active.append(.control) }
+            if flags.contains(.option) { active.append(.option) }
+            if flags.contains(.shift) { active.append(.shift) }
+            if flags.contains(.command) { active.append(.command) }
+            label.attributedStringValue = alfredStyleString(
+                activeModifiers: active,
+                suffix: shortcut.comboKeyLabel ?? "",
+                suffixColor: accent
+            )
         }
     }
 
-    private func updateGlyphColors(highlight: ModifierKind?, flags: NSEvent.ModifierFlags) {
-        let base = NSColor.secondaryLabelColor.withAlphaComponent(0.55)
-        let on = accent
-        let parts: [(String, Bool)] = [
-            ("⌃", highlight == .control || flags.contains(.control)),
-            ("⌥", highlight == .option || flags.contains(.option)),
-            ("⇧", highlight == .shift || flags.contains(.shift)),
-            ("⌘", highlight == .command || flags.contains(.command)),
-        ]
-        let attributed = NSMutableAttributedString()
-        for (index, part) in parts.enumerated() {
+    /// Alfred-style: always show ⌃⌥⇧⌘; only the live combo (+ key / “double tap”) is purple.
+    private func alfredStyleString(
+        activeModifiers: [ModifierKind],
+        suffix: String,
+        suffixColor: NSColor
+    ) -> NSAttributedString {
+        let inactive = NSColor.secondaryLabelColor.withAlphaComponent(0.45)
+        let font = NSFont.systemFont(ofSize: 14, weight: .medium)
+        let result = NSMutableAttributedString()
+        let order: [ModifierKind] = [.control, .option, .shift, .command]
+
+        for (index, kind) in order.enumerated() {
             if index > 0 {
-                attributed.append(NSAttributedString(string: " "))
+                result.append(NSAttributedString(string: " ", attributes: [.font: font]))
             }
-            attributed.append(NSAttributedString(
-                string: part.0,
+            let on = activeModifiers.contains(kind)
+            result.append(NSAttributedString(
+                string: kind.symbol,
                 attributes: [
-                    .foregroundColor: part.1 ? on : base,
-                    .font: NSFont.systemFont(ofSize: 13),
+                    .font: font,
+                    .foregroundColor: on ? accent : inactive,
                 ]
             ))
         }
-        glyphsLabel.attributedStringValue = attributed
+
+        if !suffix.isEmpty {
+            result.append(NSAttributedString(string: " ", attributes: [.font: font]))
+            result.append(NSAttributedString(
+                string: suffix,
+                attributes: [
+                    .font: font,
+                    .foregroundColor: suffixColor,
+                ]
+            ))
+        }
+        return result
     }
 
     private func beginRecording() {
@@ -333,28 +348,32 @@ final class HotkeyRecorderView: NSView {
             return
         }
         isRecording = true
-        lastTapModifier = nil
-        lastTapTime = 0
-        downModifiers = []
-        AppState.shared.hotkeyMonitor.setPaused(true)
+        resetTapState()
         refreshDisplay()
     }
 
     private func endRecording(cancelOnly: Bool) {
         guard isRecording else { return }
         isRecording = false
+        resetTapState()
         AppState.shared.hotkeyMonitor.setPaused(false)
         if cancelOnly {
             refreshDisplay()
         }
     }
 
+    /// Apply immediately; stay focused for the next gesture. Global hotkey stays live so
+    /// re-triggering the current binding (e.g. ⌘ double tap) opens the launcher.
     private func commit(_ shortcut: HotkeyShortcut) {
-        isRecording = false
-        AppState.shared.hotkeyMonitor.setPaused(false)
         self.shortcut = shortcut
+        resetTapState()
         refreshDisplay()
         onShortcutChange?(shortcut)
-        window?.makeFirstResponder(nil)
+    }
+
+    private func resetTapState() {
+        lastTapModifier = nil
+        lastTapTime = 0
+        downModifiers = []
     }
 }
