@@ -1,6 +1,10 @@
 import AppKit
 import SwiftUI
 
+extension Notification.Name {
+    static let openAppPreferences = Notification.Name("EggplantFred.openAppPreferences")
+}
+
 @main
 struct EggplantFredApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -8,8 +12,13 @@ struct EggplantFredApp: App {
 
     var body: some Scene {
         // Template SF Symbol → monochrome like other menu bar icons (emoji stays colorful).
-        MenuBarExtra("EggplantFred", systemImage: "hat.widebrim.fill") {
+        // Label stays mounted so PreferencesEnvironmentBridge can always receive open requests
+        // from the launcher hat's AppKit menu (menu body is only alive while the tray is open).
+        MenuBarExtra {
             AppStatusMenuContent()
+        } label: {
+            Image(systemName: "hat.widebrim.fill")
+                .background(PreferencesEnvironmentBridge())
         }
 
         Settings {
@@ -27,6 +36,35 @@ struct EggplantFredApp: App {
     }
 }
 
+/// Bridges AppKit status menus → SwiftUI `openSettings` (required; `showSettingsWindow:` is rejected).
+private struct PreferencesEnvironmentBridge: View {
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+            .onAppear {
+                OpenSettingsGateway.shared.open = { [openSettings] in
+                    openSettings()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openAppPreferences)) { _ in
+                OpenSettingsGateway.shared.open?()
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.setActivationPolicy(.regular)
+            }
+    }
+}
+
+@MainActor
+enum OpenSettingsGateway {
+    static let shared = Gateway()
+    final class Gateway {
+        var open: (() -> Void)?
+    }
+}
+
 /// Shared by menu bar and the launcher hat icon (Alfred-style).
 struct AppStatusMenuContent: View {
     @ObservedObject private var appState = AppState.shared
@@ -39,10 +77,14 @@ struct AppStatusMenuContent: View {
 
         Divider()
 
-        Button("Preferences...") {
-            appState.openPreferences()
+        SettingsLink {
+            Text("Preferences...")
         }
         .keyboardShortcut(",", modifiers: [.command])
+        .simultaneousGesture(TapGesture().onEnded {
+            // Menu bar (LSUIElement) apps need an explicit activate so Settings comes forward.
+            NSApp.activate(ignoringOtherApps: true)
+        })
 
         Divider()
 
@@ -192,16 +234,15 @@ final class AppState: ObservableObject {
     }
 
     func openPreferences() {
-        NSApp.activate(ignoringOtherApps: true)
-        // SwiftUI `Settings` scene (macOS 13+); fall back for older selectors.
-        let settingsSelector = Selector(("showSettingsWindow:"))
-        let prefsSelector = Selector(("showPreferencesWindow:"))
-        if NSApp.responds(to: settingsSelector) {
-            NSApp.sendAction(settingsSelector, to: nil, from: nil)
+        // Must go through SwiftUI `openSettings` / SettingsLink — AppKit
+        // `showSettingsWindow:` logs "Please use SettingsLink" and does nothing.
+        if let open = OpenSettingsGateway.shared.open {
+            open()
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.setActivationPolicy(.regular)
         } else {
-            NSApp.sendAction(prefsSelector, to: nil, from: nil)
+            NotificationCenter.default.post(name: .openAppPreferences, object: nil)
         }
-        NSApp.setActivationPolicy(.regular)
     }
 
     func quit() {
