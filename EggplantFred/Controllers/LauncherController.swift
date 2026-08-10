@@ -77,7 +77,7 @@ final class LauncherController: NSObject, ObservableObject {
             }
 
         let root = SearchWindowView(viewModel: viewModel)
-        let hostingView = NSHostingView(rootView: root)
+        let hostingView = ClearHostingView(rootView: root)
         hostingView.frame = NSRect(x: 0, y: 0, width: panelWidth, height: compactHeight)
 
         let panel = KeyablePanel(
@@ -89,7 +89,9 @@ final class LauncherController: NSObject, ObservableObject {
         panel.level = .floating
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        // Rectangular AppKit window shadow also reads as black corners around a
+        // rounded panel; SwiftUI draws the soft rounded shadow instead.
+        panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = true
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
@@ -200,6 +202,45 @@ final class LauncherController: NSObject, ObservableObject {
 final class KeyablePanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
+}
+
+/// `NSHostingView` fills its bounds opaquely by default, which shows up as
+/// black rectangles outside a SwiftUI rounded clip on a clear `NSPanel`.
+private final class ClearHostingView<Content: View>: NSHostingView<Content> {
+    required init(rootView: Content) {
+        super.init(rootView: rootView)
+        setupClearSurface()
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        setupClearSurface()
+    }
+
+    override func layout() {
+        super.layout()
+        setupClearSurface()
+    }
+
+    private func setupClearSurface() {
+        wantsLayer = true
+        layer?.backgroundColor = NSColor.clear.cgColor
+        layer?.isOpaque = false
+        // Walk a couple of ancestors — SwiftUI sometimes inserts opaque wrappers.
+        var view: NSView? = self
+        for _ in 0..<4 {
+            guard let current = view else { break }
+            current.wantsLayer = true
+            current.layer?.backgroundColor = NSColor.clear.cgColor
+            current.layer?.isOpaque = false
+            view = current.superview
+        }
+    }
 }
 
 extension LauncherController: NSWindowDelegate {

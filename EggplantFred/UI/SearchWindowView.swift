@@ -5,31 +5,44 @@ struct SearchWindowView: View {
     @ObservedObject var viewModel: SearchViewModel
     @FocusState private var queryFocused: Bool
 
-    /// Compact bar height when there are no matches; expands when results appear.
-    static let compactHeight: CGFloat = 64
-    static let expandedHeight: CGFloat = 480
-    static let panelWidth: CGFloat = 720
+    /// Alfred-style chrome: outer padding around an inset search field.
+    static let outerPadding: CGFloat = 12
+    static let innerFieldHeight: CGFloat = 52
+    static let chromeWidth: CGFloat = 720
+    static let outerCornerRadius: CGFloat = 16
+    static let innerCornerRadius: CGFloat = 10
+    /// Extra clear space so the soft shadow isn't clipped into a rectangle
+    /// (clipped shadows read as black corners on light wallpapers).
+    static let shadowBleed: CGFloat = 36
+
+    static var contentCompactHeight: CGFloat { outerPadding * 2 + innerFieldHeight }
+    static var contentExpandedHeight: CGFloat { 480 }
+    static var panelWidth: CGFloat { chromeWidth + shadowBleed * 2 }
+    static var compactHeight: CGFloat { contentCompactHeight + shadowBleed * 2 }
+    static var expandedHeight: CGFloat { contentExpandedHeight + shadowBleed * 2 }
 
     var showsResults: Bool { !viewModel.results.isEmpty }
 
     var body: some View {
         VStack(spacing: 0) {
-            searchBar
+            searchField
+                .padding(Self.outerPadding)
 
             if showsResults {
-                Divider().opacity(0.25)
                 resultsList
+                    .padding(.horizontal, Self.outerPadding)
+                    .padding(.bottom, Self.outerPadding)
             }
         }
+        .frame(width: Self.chromeWidth)
+        .frame(
+            height: showsResults ? Self.contentExpandedHeight : Self.contentCompactHeight,
+            alignment: .top
+        )
+        .background(panelChrome)
+        .padding(Self.shadowBleed)
         .frame(width: Self.panelWidth)
         .frame(height: showsResults ? Self.expandedHeight : Self.compactHeight, alignment: .top)
-        .background(WindowBackground())
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.35), radius: 28, y: 12)
         .animation(.easeOut(duration: 0.14), value: showsResults)
         .onAppear {
             queryFocused = true
@@ -39,22 +52,26 @@ struct SearchWindowView: View {
         }
     }
 
-    private var searchBar: some View {
+    private var searchField: some View {
         HStack(spacing: 12) {
             TextField("", text: $viewModel.query, prompt: Text("Search apps"))
                 .textFieldStyle(.plain)
-                .font(.system(size: 26, weight: .regular))
+                .font(.system(size: 24, weight: .regular))
                 .focused($queryFocused)
                 .onSubmit { viewModel.openSelected() }
 
-            Image(systemName: "magnifyingglass.circle.fill")
-                .font(.system(size: 26))
+            Image(systemName: "hat.widebrim.fill")
+                .font(.system(size: 20, weight: .medium))
                 .foregroundStyle(.secondary)
-                .symbolRenderingMode(.hierarchical)
+                .symbolRenderingMode(.monochrome)
+                .accessibilityHidden(true)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 14)
-        .frame(height: Self.compactHeight)
+        .padding(.horizontal, 14)
+        .frame(height: Self.innerFieldHeight)
+        .background(
+            RoundedRectangle(cornerRadius: Self.innerCornerRadius, style: .continuous)
+                .fill(Color.primary.opacity(0.06))
+        )
     }
 
     private var resultsList: some View {
@@ -73,7 +90,6 @@ struct SearchWindowView: View {
                         }
                     }
                 }
-                .padding(8)
             }
             .onChange(of: viewModel.selectedIndex) { _, newValue in
                 guard viewModel.results.indices.contains(newValue) else { return }
@@ -83,32 +99,14 @@ struct SearchWindowView: View {
             }
         }
     }
-}
 
-private struct WindowBackground: View {
-    var body: some View {
-        ZStack {
-            VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
-            Color(nsColor: .windowBackgroundColor).opacity(0.55)
-        }
-    }
-}
-
-struct VisualEffectView: NSViewRepresentable {
-    let material: NSVisualEffectView.Material
-    let blendingMode: NSVisualEffectView.BlendingMode
-
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = material
-        view.blendingMode = blendingMode
-        view.state = .active
-        view.wantsLayer = true
-        return view
-    }
-
-    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
-        nsView.material = material
-        nsView.blendingMode = blendingMode
+    private var panelChrome: some View {
+        RoundedRectangle(cornerRadius: Self.outerCornerRadius, style: .continuous)
+            .fill(Color(nsColor: .windowBackgroundColor))
+            .overlay(
+                RoundedRectangle(cornerRadius: Self.outerCornerRadius, style: .continuous)
+                    .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.5)
+            )
+            .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
     }
 }

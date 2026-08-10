@@ -7,7 +7,8 @@ struct EggplantFredApp: App {
     @StateObject private var appState = AppState.shared
 
     var body: some Scene {
-        MenuBarExtra("EggplantFred", systemImage: "magnifyingglass") {
+        // Template SF Symbol → monochrome like other menu bar icons (emoji stays colorful).
+        MenuBarExtra("EggplantFred", systemImage: "hat.widebrim.fill") {
             Button("Open Launcher") {
                 appState.launcher.toggle()
             }
