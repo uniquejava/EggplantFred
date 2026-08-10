@@ -47,7 +47,11 @@ final class SearchViewModel: ObservableObject {
     }
 
     func recompute() {
-        let newResults = SearchEngine.search(query: query, in: appIndex.apps, limit: 9)
+        let newResults = SearchEngine.search(
+            query: query,
+            in: appIndex.apps,
+            limit: SearchWindowView.maxVisibleResults
+        )
         let newIndex = min(selectedIndex, max(0, newResults.count - 1))
         // Defer publishes so we never mutate during an in-flight SwiftUI update
         // (avoids "Publishing changes from within view updates").
@@ -64,6 +68,12 @@ final class SearchViewModel: ObservableObject {
             let next = (self.selectedIndex + delta) % count
             self.selectedIndex = next >= 0 ? next : next + count
         }
+    }
+
+    /// Mouse hover — move highlight only; click / ⏎ still opens.
+    func highlightIndex(_ index: Int) {
+        guard results.indices.contains(index), selectedIndex != index else { return }
+        selectedIndex = index
     }
 
     func selectIndex(_ index: Int) {

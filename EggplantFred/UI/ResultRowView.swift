@@ -34,7 +34,7 @@ struct ResultRowView: View {
                 .frame(minWidth: 28, alignment: .trailing)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(isSelected ? Color(red: 0.35, green: 0.18, blue: 0.55) : Color.clear)

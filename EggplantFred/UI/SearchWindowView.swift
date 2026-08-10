@@ -11,22 +11,51 @@ struct SearchWindowView: View {
     static let chromeWidth: CGFloat = 720
     static let outerCornerRadius: CGFloat = 16
     static let innerCornerRadius: CGFloat = 10
-    /// Extra clear space so the soft shadow isn't clipped into a rectangle
-    /// (clipped shadows read as black corners on light wallpapers).
-    static let shadowBleed: CGFloat = 36
+    static let maxVisibleResults = 9
+    static let rowHeight: CGFloat = 56
+    static let rowSpacing: CGFloat = 2
+    /// Clear inset so the rounded soft shadow isn't clipped into square
+    /// corners (system `NSPanel` shadow is rectangular and leaves light ears
+    /// on pale wallpapers). Keep this tight for cleaner window screenshots.
+    static let shadowBleed: CGFloat = 20
+    static let shadowRadius: CGFloat = 14
+    static let shadowYOffset: CGFloat = 6
 
-    static var contentCompactHeight: CGFloat { outerPadding * 2 + innerFieldHeight }
-    static var contentExpandedHeight: CGFloat { 480 }
     static var panelWidth: CGFloat { chromeWidth + shadowBleed * 2 }
-    static var compactHeight: CGFloat { contentCompactHeight + shadowBleed * 2 }
-    static var expandedHeight: CGFloat { contentExpandedHeight + shadowBleed * 2 }
+    static var compactHeight: CGFloat { contentHeight(resultCount: 0) }
+
+    static func resultsListHeight(count: Int) -> CGFloat {
+        let n = min(max(count, 0), maxVisibleResults)
+        guard n > 0 else { return 0 }
+        return CGFloat(n) * rowHeight + CGFloat(n - 1) * rowSpacing
+    }
+
+    /// Search-field block only (padding + field + padding). Stays fixed while typing.
+    static var fieldChromeHeight: CGFloat { outerPadding * 2 + innerFieldHeight }
+
+    /// Compact = field only; expanded = field + exactly N≤9 rows.
+    static func chromeHeight(resultCount: Int) -> CGFloat {
+        if resultCount <= 0 {
+            return fieldChromeHeight
+        }
+        return fieldChromeHeight
+            + resultsListHeight(count: resultCount)
+            + outerPadding
+    }
+
+    static func contentHeight(resultCount: Int) -> CGFloat {
+        chromeHeight(resultCount: resultCount) + shadowBleed * 2
+    }
 
     var showsResults: Bool { !viewModel.results.isEmpty }
 
     var body: some View {
         VStack(spacing: 0) {
             searchField
-                .padding(Self.outerPadding)
+                .padding(.horizontal, Self.outerPadding)
+                .padding(.top, Self.outerPadding)
+                .padding(.bottom, Self.outerPadding)
+                .frame(height: Self.fieldChromeHeight, alignment: .top)
 
             if showsResults {
                 resultsList
@@ -34,16 +63,14 @@ struct SearchWindowView: View {
                     .padding(.bottom, Self.outerPadding)
             }
         }
-        .frame(width: Self.chromeWidth)
-        .frame(
-            height: showsResults ? Self.contentExpandedHeight : Self.contentCompactHeight,
-            alignment: .top
-        )
+        .frame(width: Self.chromeWidth, alignment: .top)
+        .frame(height: Self.chromeHeight(resultCount: viewModel.results.count), alignment: .top)
         .background(panelChrome)
         .padding(Self.shadowBleed)
-        .frame(width: Self.panelWidth)
-        .frame(height: showsResults ? Self.expandedHeight : Self.compactHeight, alignment: .top)
-        .animation(.easeOut(duration: 0.14), value: showsResults)
+        .frame(width: Self.panelWidth, alignment: .top)
+        .frame(height: Self.contentHeight(resultCount: viewModel.results.count), alignment: .top)
+        // No SwiftUI height animation — it fights NSPanel.setFrame and makes
+        // the query field jitter while typing.
         .onAppear {
             Task { @MainActor in queryFocused = true }
         }
@@ -84,33 +111,29 @@ struct SearchWindowView: View {
     }
 
     private var resultsList: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 2) {
-                    ForEach(Array(viewModel.results.enumerated()), id: \.element.id) { index, app in
-                        ResultRowView(
-                            app: app,
-                            isSelected: index == viewModel.selectedIndex,
-                            shortcutHint: viewModel.shortcutHint(for: index)
-                        )
-                        .id(app.id)
-                        .onTapGesture {
-                            viewModel.selectIndex(index)
-                        }
+        // N≤9 rows, no ScrollView — height tracks count; query field stays pinned.
+        VStack(spacing: Self.rowSpacing) {
+            ForEach(Array(viewModel.results.enumerated()), id: \.element.id) { index, app in
+                ResultRowView(
+                    app: app,
+                    isSelected: index == viewModel.selectedIndex,
+                    shortcutHint: viewModel.shortcutHint(for: index)
+                )
+                .frame(height: Self.rowHeight)
+                .onHover { hovering in
+                    if hovering {
+                        viewModel.highlightIndex(index)
                     }
                 }
-            }
-            .onChange(of: viewModel.selectedIndex) { _, newValue in
-                guard viewModel.results.indices.contains(newValue) else { return }
-                withAnimation(.easeOut(duration: 0.12)) {
-                    proxy.scrollTo(viewModel.results[newValue].id, anchor: .center)
+                .onTapGesture {
+                    viewModel.selectIndex(index)
                 }
             }
         }
+        .frame(height: Self.resultsListHeight(count: viewModel.results.count), alignment: .top)
     }
 
-    /// Frosted chrome: vibrancy lets the wallpaper peek through a little;
-    /// a light tint keeps text readable.
+    /// Frosted chrome + soft rounded shadow (not the rectangular NSPanel shadow).
     private var panelChrome: some View {
         ZStack {
             VisualEffectView(
@@ -126,7 +149,11 @@ struct SearchWindowView: View {
             RoundedRectangle(cornerRadius: Self.outerCornerRadius, style: .continuous)
                 .strokeBorder(Color.primary.opacity(0.22), lineWidth: 1)
         )
-        .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+        .shadow(
+            color: .black.opacity(0.22),
+            radius: Self.shadowRadius,
+            y: Self.shadowYOffset
+        )
     }
 }
 

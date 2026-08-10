@@ -16,7 +16,6 @@ final class LauncherController: NSObject, ObservableObject {
 
     private let panelWidth = SearchWindowView.panelWidth
     private let compactHeight = SearchWindowView.compactHeight
-    private let expandedHeight = SearchWindowView.expandedHeight
 
     func configure(appIndex: AppIndex) {
         self.appIndex = appIndex
@@ -35,7 +34,7 @@ final class LauncherController: NSObject, ObservableObject {
         if panel == nil {
             createPanel(appIndex: appIndex)
         }
-        resizePanel(hasResults: false, animate: false)
+        resizePanel(resultCount: 0, animate: false)
         positionPanel()
         guard let panel else { return }
 
@@ -78,7 +77,7 @@ final class LauncherController: NSObject, ObservableObject {
                 guard let self else { return }
                 Task { @MainActor in
                     guard self.isVisible else { return }
-                    self.resizePanel(hasResults: !results.isEmpty, animate: true)
+                    self.resizePanel(resultCount: results.count, animate: true)
                 }
             }
 
@@ -96,8 +95,9 @@ final class LauncherController: NSObject, ObservableObject {
         panel.level = .popUpMenu
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        // Rectangular AppKit window shadow also reads as black corners around a
-        // rounded panel; SwiftUI draws the soft rounded shadow instead.
+        // Rectangular AppKit shadow leaves pale square "ears" at the four
+        // corners of a rounded clear panel (obvious on white wallpapers).
+        // Soft rounded shadow is drawn in SwiftUI instead.
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.isMovableByWindowBackground = true
@@ -124,9 +124,17 @@ final class LauncherController: NSObject, ObservableObject {
         }
     }
 
-    private func resizePanel(hasResults: Bool, animate: Bool) {
+    private func resizePanel(resultCount: Int, animate: Bool) {
         guard let panel else { return }
-        let height = hasResults ? expandedHeight : compactHeight
+        let height = SearchWindowView.contentHeight(resultCount: resultCount)
+        let compact = SearchWindowView.compactHeight
+        let currentlyExpanded = panel.frame.height > compact + 0.5
+        let willExpand = resultCount > 0
+        // Animate only compact ↔ first results. While typing (c→co) height may
+        // change with result count — do that instantly so the query field
+        // doesn't ease/jitter.
+        let shouldAnimate = animate && (currentlyExpanded != willExpand)
+
         guard abs(panel.frame.height - height) > 0.5 else {
             if let hosting = panel.contentView {
                 hosting.frame = NSRect(x: 0, y: 0, width: panelWidth, height: height)
@@ -135,7 +143,7 @@ final class LauncherController: NSObject, ObservableObject {
         }
 
         let frame = panel.frame
-        // Keep the top edge fixed so the list grows downward (Alfred-like).
+        // Keep the top edge fixed so the query field never moves.
         let newFrame = NSRect(
             x: frame.origin.x,
             y: frame.maxY - height,
@@ -147,7 +155,7 @@ final class LauncherController: NSObject, ObservableObject {
             hosting.frame = NSRect(x: 0, y: 0, width: panelWidth, height: height)
         }
 
-        if animate {
+        if shouldAnimate {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.14
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
