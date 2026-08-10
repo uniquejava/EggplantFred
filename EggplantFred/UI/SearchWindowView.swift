@@ -96,11 +96,7 @@ struct SearchWindowView: View {
                     return .handled
                 }
 
-            Image(systemName: "hat.widebrim.fill")
-                .font(.system(size: 20, weight: .medium))
-                .foregroundStyle(.secondary)
-                .symbolRenderingMode(.monochrome)
-                .accessibilityHidden(true)
+            StatusMenuHatIcon()
         }
         .padding(.horizontal, 14)
         .frame(height: Self.innerFieldHeight)

@@ -17,6 +17,7 @@
 		A54ED9C3F0D54A13973ADC5A /* SearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18B799D466E4D649CA896FB /* SearchViewModel.swift */; };
 		9C66B76EE2924495AD1B6425 /* SearchWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E7B11EFB274E7FBDBD468A /* SearchWindowView.swift */; };
 		2B90D50409E94807BABA112C /* ResultRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B9C0A31408C40148A1553D2 /* ResultRowView.swift */; };
+		B7E4A12C9F8D4E6A8C1D2B30 /* StatusMenuHatIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2E3D4C5B6978877665544 /* StatusMenuHatIcon.swift */; };
 		E5FFC6533B5E465DB99BB5A2 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64433D9DCECE4C9C8C2416B3 /* SettingsView.swift */; };
 		AAE9D83ED55F4F15BF669C87 /* AppLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE77754392BA4C1A89067167 /* AppLauncher.swift */; };
 		EC99FCF8B9B644528DF839A9 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BDDA01AFFA14374810BAB29 /* LaunchAtLogin.swift */; };
@@ -35,6 +36,7 @@
 		F18B799D466E4D649CA896FB /* SearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchViewModel.swift; sourceTree = "<group>"; };
 		D4E7B11EFB274E7FBDBD468A /* SearchWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchWindowView.swift; sourceTree = "<group>"; };
 		3B9C0A31408C40148A1553D2 /* ResultRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultRowView.swift; sourceTree = "<group>"; };
+		A1F2E3D4C5B6978877665544 /* StatusMenuHatIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuHatIcon.swift; sourceTree = "<group>"; };
 		64433D9DCECE4C9C8C2416B3 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		AE77754392BA4C1A89067167 /* AppLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLauncher.swift; sourceTree = "<group>"; };
 		0BDDA01AFFA14374810BAB29 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
@@ -127,6 +129,7 @@
 				F18B799D466E4D649CA896FB /* SearchViewModel.swift */,
 				D4E7B11EFB274E7FBDBD468A /* SearchWindowView.swift */,
 				3B9C0A31408C40148A1553D2 /* ResultRowView.swift */,
+				A1F2E3D4C5B6978877665544 /* StatusMenuHatIcon.swift */,
 				64433D9DCECE4C9C8C2416B3 /* SettingsView.swift */,
 			);
 			path = UI;
@@ -220,6 +223,7 @@
 				A54ED9C3F0D54A13973ADC5A /* SearchViewModel.swift in Sources */,
 				9C66B76EE2924495AD1B6425 /* SearchWindowView.swift in Sources */,
 				2B90D50409E94807BABA112C /* ResultRowView.swift in Sources */,
+				B7E4A12C9F8D4E6A8C1D2B30 /* StatusMenuHatIcon.swift in Sources */,
 				E5FFC6533B5E465DB99BB5A2 /* SettingsView.swift in Sources */,
 				AAE9D83ED55F4F15BF669C87 /* AppLauncher.swift in Sources */,
 				EC99FCF8B9B644528DF839A9 /* LaunchAtLogin.swift in Sources */,

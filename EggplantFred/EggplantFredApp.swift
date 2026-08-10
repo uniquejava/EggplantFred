@@ -9,28 +9,7 @@ struct EggplantFredApp: App {
     var body: some Scene {
         // Template SF Symbol → monochrome like other menu bar icons (emoji stays colorful).
         MenuBarExtra("EggplantFred", systemImage: "hat.widebrim.fill") {
-            Button("Open Launcher") {
-                appState.launcher.toggle()
-            }
-            .keyboardShortcut("l", modifiers: [.command])
-
-            Divider()
-
-            SettingsLink {
-                Text("Preferences...")
-            }
-            .keyboardShortcut(",", modifiers: [.command])
-            .simultaneousGesture(TapGesture().onEnded {
-                // Menu bar (LSUIElement) apps need an explicit activate so Settings comes forward.
-                NSApp.activate(ignoringOtherApps: true)
-            })
-
-            Divider()
-
-            Button("Quit EggplantFred") {
-                NSApplication.shared.terminate(nil)
-            }
-            .keyboardShortcut("q", modifiers: [.command])
+            AppStatusMenuContent()
         }
 
         Settings {
@@ -45,6 +24,32 @@ struct EggplantFredApp: App {
                     NSApp.setActivationPolicy(.accessory)
                 }
         }
+    }
+}
+
+/// Shared by menu bar and the launcher hat icon (Alfred-style).
+struct AppStatusMenuContent: View {
+    @ObservedObject private var appState = AppState.shared
+
+    var body: some View {
+        Button("Open Launcher") {
+            appState.launcher.toggle()
+        }
+        .keyboardShortcut("l", modifiers: [.command])
+
+        Divider()
+
+        Button("Preferences...") {
+            appState.openPreferences()
+        }
+        .keyboardShortcut(",", modifiers: [.command])
+
+        Divider()
+
+        Button("Quit EggplantFred") {
+            appState.quit()
+        }
+        .keyboardShortcut("q", modifiers: [.command])
     }
 }
 
@@ -184,5 +189,22 @@ final class AppState: ObservableObject {
             ensureHotkeyMonitorRunning()
         }
         objectWillChange.send()
+    }
+
+    func openPreferences() {
+        NSApp.activate(ignoringOtherApps: true)
+        // SwiftUI `Settings` scene (macOS 13+); fall back for older selectors.
+        let settingsSelector = Selector(("showSettingsWindow:"))
+        let prefsSelector = Selector(("showPreferencesWindow:"))
+        if NSApp.responds(to: settingsSelector) {
+            NSApp.sendAction(settingsSelector, to: nil, from: nil)
+        } else {
+            NSApp.sendAction(prefsSelector, to: nil, from: nil)
+        }
+        NSApp.setActivationPolicy(.regular)
+    }
+
+    func quit() {
+        NSApplication.shared.terminate(nil)
     }
 }

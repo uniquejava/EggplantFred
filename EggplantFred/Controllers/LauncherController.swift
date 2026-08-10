@@ -14,11 +14,28 @@ final class LauncherController: NSObject, ObservableObject {
 
     @Published var isVisible = false
 
+    /// While an AppKit status menu is open from the hat icon, ignore resign-key hides.
+    private var suppressHideOnResign = false
+
     private let panelWidth = SearchWindowView.panelWidth
     private let compactHeight = SearchWindowView.compactHeight
 
     func configure(appIndex: AppIndex) {
         self.appIndex = appIndex
+    }
+
+    func beginExternalMenuPresentation() {
+        suppressHideOnResign = true
+    }
+
+    func endExternalMenuPresentation() {
+        // Menu has closed; allow a tick so key-window restore can settle.
+        DispatchQueue.main.async { [weak self] in
+            self?.suppressHideOnResign = false
+            if let panel = self?.panel, self?.isVisible == true, !panel.isKeyWindow {
+                panel.makeKeyAndOrderFront(nil)
+            }
+        }
     }
 
     func toggle() {
@@ -119,8 +136,27 @@ final class LauncherController: NSObject, ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor in
-                self?.hide()
+                self?.hideAfterResignIfNeeded()
             }
+        }
+    }
+
+    private func hideAfterResignIfNeeded() {
+        guard !suppressHideOnResign else { return }
+        // Defer so SwiftUI/AppKit menus that briefly steal key don't dismiss us.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self, self.isVisible, let panel = self.panel else { return }
+            if self.suppressHideOnResign || panel.isKeyWindow { return }
+            if Self.isMenuWindowVisible { return }
+            self.hide()
+        }
+    }
+
+    private static var isMenuWindowVisible: Bool {
+        NSApp.windows.contains { window in
+            guard window.isVisible else { return false }
+            let name = String(describing: type(of: window))
+            return name.contains("Menu") || name.contains("NSPopup")
         }
     }
 
@@ -253,7 +289,7 @@ private final class ClearHostingView<Content: View>: NSHostingView<Content> {
 
 extension LauncherController: NSWindowDelegate {
     func windowDidResignKey(_ notification: Notification) {
-        hide()
+        hideAfterResignIfNeeded()
     }
 }
 
