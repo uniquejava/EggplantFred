@@ -47,16 +47,23 @@ final class SearchViewModel: ObservableObject {
     }
 
     func recompute() {
-        results = SearchEngine.search(query: query, in: appIndex.apps, limit: 9)
-        if selectedIndex >= results.count {
-            selectedIndex = max(0, results.count - 1)
+        let newResults = SearchEngine.search(query: query, in: appIndex.apps, limit: 9)
+        let newIndex = min(selectedIndex, max(0, newResults.count - 1))
+        // Defer publishes so we never mutate during an in-flight SwiftUI update
+        // (avoids "Publishing changes from within view updates").
+        Task { @MainActor in
+            self.results = newResults
+            self.selectedIndex = newIndex
         }
     }
 
     func moveSelection(by delta: Int) {
-        guard !results.isEmpty else { return }
-        let next = selectedIndex + delta
-        selectedIndex = max(0, min(results.count - 1, next))
+        Task { @MainActor in
+            guard !self.results.isEmpty else { return }
+            let count = self.results.count
+            let next = (self.selectedIndex + delta) % count
+            self.selectedIndex = next >= 0 ? next : next + count
+        }
     }
 
     func selectIndex(_ index: Int) {

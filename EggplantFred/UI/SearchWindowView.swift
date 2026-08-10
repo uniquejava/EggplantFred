@@ -45,20 +45,29 @@ struct SearchWindowView: View {
         .frame(height: showsResults ? Self.expandedHeight : Self.compactHeight, alignment: .top)
         .animation(.easeOut(duration: 0.14), value: showsResults)
         .onAppear {
-            queryFocused = true
+            Task { @MainActor in queryFocused = true }
         }
         .onReceive(NotificationCenter.default.publisher(for: .launcherDidShow)) { _ in
-            queryFocused = true
+            Task { @MainActor in queryFocused = true }
         }
     }
 
     private var searchField: some View {
         HStack(spacing: 12) {
-            TextField("", text: $viewModel.query, prompt: Text("Search apps"))
+            TextField("", text: $viewModel.query)
                 .textFieldStyle(.plain)
                 .font(.system(size: 24, weight: .regular))
                 .focused($queryFocused)
                 .onSubmit { viewModel.openSelected() }
+                // Steal ↑/↓ from the field editor so they only move list selection.
+                .onKeyPress(.upArrow) {
+                    viewModel.moveSelection(by: -1)
+                    return .handled
+                }
+                .onKeyPress(.downArrow) {
+                    viewModel.moveSelection(by: 1)
+                    return .handled
+                }
 
             Image(systemName: "hat.widebrim.fill")
                 .font(.system(size: 20, weight: .medium))
@@ -70,7 +79,7 @@ struct SearchWindowView: View {
         .frame(height: Self.innerFieldHeight)
         .background(
             RoundedRectangle(cornerRadius: Self.innerCornerRadius, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color.primary.opacity(0.12))
         )
     }
 
@@ -100,13 +109,53 @@ struct SearchWindowView: View {
         }
     }
 
+    /// Frosted chrome: vibrancy lets the wallpaper peek through a little;
+    /// a light tint keeps text readable.
     private var panelChrome: some View {
-        RoundedRectangle(cornerRadius: Self.outerCornerRadius, style: .continuous)
-            .fill(Color(nsColor: .windowBackgroundColor))
-            .overlay(
-                RoundedRectangle(cornerRadius: Self.outerCornerRadius, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.10), lineWidth: 0.5)
+        ZStack {
+            VisualEffectView(
+                material: .hudWindow,
+                blendingMode: .behindWindow,
+                cornerRadius: Self.outerCornerRadius
             )
-            .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+            RoundedRectangle(cornerRadius: Self.outerCornerRadius, style: .continuous)
+                .fill(Color(nsColor: .windowBackgroundColor).opacity(0.62))
+        }
+        .clipShape(RoundedRectangle(cornerRadius: Self.outerCornerRadius, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Self.outerCornerRadius, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.22), lineWidth: 1)
+        )
+        .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+    }
+}
+
+struct VisualEffectView: NSViewRepresentable {
+    let material: NSVisualEffectView.Material
+    let blendingMode: NSVisualEffectView.BlendingMode
+    var cornerRadius: CGFloat = 0
+
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = material
+        view.blendingMode = blendingMode
+        view.state = .active
+        view.wantsLayer = true
+        applyMask(to: view)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {
+        nsView.material = material
+        nsView.blendingMode = blendingMode
+        applyMask(to: nsView)
+    }
+
+    private func applyMask(to view: NSVisualEffectView) {
+        guard let layer = view.layer else { return }
+        layer.cornerRadius = cornerRadius
+        layer.cornerCurve = .continuous
+        layer.masksToBounds = true
+        layer.backgroundColor = NSColor.clear.cgColor
     }
 }

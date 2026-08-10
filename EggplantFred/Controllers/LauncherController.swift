@@ -40,6 +40,9 @@ final class LauncherController: NSObject, ObservableObject {
         guard let panel else { return }
 
         panel.alphaValue = 0
+        // Above other floating panels (e.g. Alfred). `.floating` sits under them.
+        panel.level = .popUpMenu
+        panel.orderFrontRegardless()
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         isVisible = true
@@ -72,8 +75,11 @@ final class LauncherController: NSObject, ObservableObject {
         sizeCancellable = viewModel.$results
             .receive(on: RunLoop.main)
             .sink { [weak self] results in
-                guard let self, self.isVisible else { return }
-                self.resizePanel(hasResults: !results.isEmpty, animate: true)
+                guard let self else { return }
+                Task { @MainActor in
+                    guard self.isVisible else { return }
+                    self.resizePanel(hasResults: !results.isEmpty, animate: true)
+                }
             }
 
         let root = SearchWindowView(viewModel: viewModel)
@@ -86,7 +92,8 @@ final class LauncherController: NSObject, ObservableObject {
             backing: .buffered,
             defer: false
         )
-        panel.level = .floating
+        // Higher than `.floating` so we stack above Alfred / other launchers.
+        panel.level = .popUpMenu
         panel.isOpaque = false
         panel.backgroundColor = .clear
         // Rectangular AppKit window shadow also reads as black corners around a
@@ -160,15 +167,8 @@ final class LauncherController: NSObject, ObservableObject {
             return nil
         }
 
-        // Up / Down
-        if event.keyCode == 126 {
-            viewModel.moveSelection(by: -1)
-            return nil
-        }
-        if event.keyCode == 125 {
-            viewModel.moveSelection(by: 1)
-            return nil
-        }
+        // ↑/↓ are handled in SearchWindowView.onKeyPress so the TextField
+        // caret does not jump to start/end.
 
         // ⌘1…⌘9
         if event.modifierFlags.contains(.command),
