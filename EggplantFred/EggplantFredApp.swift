@@ -11,13 +11,13 @@ struct EggplantFredApp: App {
     @StateObject private var appState = AppState.shared
 
     var body: some Scene {
-        // Template SF Symbol → monochrome like other menu bar icons (emoji stays colorful).
-        // Label stays mounted so PreferencesEnvironmentBridge can always receive open requests
-        // from the launcher hat's AppKit menu (menu body is only alive while the tray is open).
+        // Vector PDF template (~16pt tall). Width follows content — do not force
+        // a wide frame (that was making the status item ~50pt with big gaps).
         MenuBarExtra {
             AppStatusMenuContent()
         } label: {
-            Image(systemName: "hat.widebrim.fill")
+            Image(nsImage: HatTemplateImage.menuBar())
+                .renderingMode(.template)
                 .background(PreferencesEnvironmentBridge())
         }
 

@@ -72,10 +72,18 @@ struct SearchWindowView: View {
         // No SwiftUI height animation — it fights NSPanel.setFrame and makes
         // the query field jitter while typing.
         .onAppear {
-            Task { @MainActor in queryFocused = true }
+            focusQueryField()
         }
         .onReceive(NotificationCenter.default.publisher(for: .launcherDidShow)) { _ in
-            Task { @MainActor in queryFocused = true }
+            focusQueryField()
+        }
+    }
+
+    /// Bounce focus off→on so a stale `true` from the previous show still works.
+    private func focusQueryField() {
+        queryFocused = false
+        Task { @MainActor in
+            queryFocused = true
         }
     }
 
@@ -116,8 +124,10 @@ struct SearchWindowView: View {
                     shortcutHint: viewModel.shortcutHint(for: index)
                 )
                 .frame(height: Self.rowHeight)
-                .onHover { hovering in
-                    if hovering {
+                // Continuous hover so a slight move while already over a row
+                // can unlock Alfred-style selection (plain onHover won't re-fire).
+                .onContinuousHover { phase in
+                    if case .active = phase {
                         viewModel.highlightIndex(index)
                     }
                 }

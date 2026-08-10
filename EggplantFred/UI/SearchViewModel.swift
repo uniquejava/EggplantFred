@@ -12,6 +12,10 @@ final class SearchViewModel: ObservableObject {
     private let onDismiss: () -> Void
     private var cancellables = Set<AnyCancellable>()
 
+    /// Alfred-style: when results appear under a stationary cursor, do not steal
+    /// selection until the pointer actually moves.
+    private var suppressHoverUntilMouseMovesFrom: NSPoint?
+
     init(appIndex: AppIndex, onDismiss: @escaping () -> Void) {
         self.appIndex = appIndex
         self.onDismiss = onDismiss
@@ -58,6 +62,9 @@ final class SearchViewModel: ObservableObject {
         Task { @MainActor in
             self.results = newResults
             self.selectedIndex = newIndex
+            // Lock hover until the pointer moves from this point (rows may
+            // materialize under the cursor without a mouseMoved event).
+            self.suppressHoverUntilMouseMovesFrom = NSEvent.mouseLocation
         }
     }
 
@@ -71,7 +78,15 @@ final class SearchViewModel: ObservableObject {
     }
 
     /// Mouse hover — move highlight only; click / ⏎ still opens.
+    /// Ignores hover until the pointer moves after a results refresh (Alfred).
     func highlightIndex(_ index: Int) {
+        if let origin = suppressHoverUntilMouseMovesFrom {
+            let now = NSEvent.mouseLocation
+            if now.x == origin.x && now.y == origin.y {
+                return
+            }
+            suppressHoverUntilMouseMovesFrom = nil
+        }
         guard results.indices.contains(index), selectedIndex != index else { return }
         selectedIndex = index
     }

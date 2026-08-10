@@ -5,9 +5,62 @@ import SwiftUI
 struct StatusMenuHatIcon: View {
     var body: some View {
         StatusMenuHatIconRepresentable()
-            .frame(width: 28, height: 28)
+            .frame(width: 28, height: 20)
             .help("Right-click for menu")
             .accessibilityLabel("EggplantFred menu")
+    }
+}
+
+/// Menu-bar glyph — vector PDF template.
+/// Spec (Bjango / common practice): working height ≤22pt, optical ~16pt;
+/// width follows content. Forcing a wide `.frame` inflates the status item (~50pt).
+enum HatTemplateImage {
+    static func menuBar() -> NSImage { load(height: 16) }
+    static func launcher() -> NSImage { load(height: 16) }
+
+    private static func load(height: CGFloat) -> NSImage {
+        if let named = NSImage(named: "HatGlyph") {
+            let image = named.copy() as? NSImage ?? named
+            let aspect = max(image.size.width / max(image.size.height, 1), 22.0 / 16.0)
+            image.size = NSSize(width: (height * aspect).rounded(.toNearestOrAwayFromZero), height: height)
+            image.isTemplate = true
+            return image
+        }
+        return fallback(height: height)
+    }
+
+    private static func fallback(height: CGFloat) -> NSImage {
+        let width = height * (22.0 / 16.0)
+        let size = NSSize(width: width, height: height)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        let inset = NSRect(origin: .zero, size: size)
+            .insetBy(dx: width * 0.04, dy: height * 0.06)
+        let brim = NSBezierPath(
+            ovalIn: NSRect(
+                x: inset.minX,
+                y: inset.minY + inset.height * 0.08,
+                width: inset.width,
+                height: inset.height * 0.28
+            )
+        )
+        let crownW = inset.width * 0.48
+        let crown = NSBezierPath(
+            roundedRect: NSRect(
+                x: inset.midX - crownW / 2,
+                y: inset.minY + inset.height * 0.22,
+                width: crownW,
+                height: inset.height * 0.68
+            ),
+            xRadius: crownW * 0.28,
+            yRadius: inset.height * 0.14
+        )
+        NSColor.black.setFill()
+        brim.fill()
+        crown.fill()
+        image.unlockFocus()
+        image.isTemplate = true
+        return image
     }
 }
 
@@ -26,7 +79,7 @@ private final class StatusMenuHatNSView: NSView {
         super.init(frame: frameRect)
         wantsLayer = true
         imageView.imageScaling = .scaleProportionallyUpOrDown
-        imageView.image = Self.hatImage()
+        imageView.image = HatTemplateImage.launcher()
         imageView.contentTintColor = .secondaryLabelColor
         addSubview(imageView)
     }
@@ -50,15 +103,6 @@ private final class StatusMenuHatNSView: NSView {
             in: self
         )
         AppState.shared.launcher.endExternalMenuPresentation()
-    }
-
-    private static func hatImage() -> NSImage {
-        let config = NSImage.SymbolConfiguration(pointSize: 20, weight: .medium)
-        let image = NSImage(systemSymbolName: "hat.widebrim.fill", accessibilityDescription: nil)?
-            .withSymbolConfiguration(config)
-            ?? NSImage()
-        image.isTemplate = true
-        return image
     }
 }
 

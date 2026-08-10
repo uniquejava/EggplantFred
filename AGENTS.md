@@ -40,21 +40,31 @@ EggplantFred/
   UI/SearchWindowView.swift      # Compact bar; expands when results non-empty
   UI/SearchViewModel.swift       # Query, selection, ⌘N hints
   UI/ResultRowView.swift
+  UI/StatusMenuHatIcon.swift     # Menu-bar + launcher hat; HatTemplateImage
   UI/SettingsView.swift          # Alfred prefs + HotkeyRecorderView (NSView first-responder)
+  Assets.xcassets/
+    AppIcon.appiconset/          # Dock / Finder / DMG app icon (PNG sizes)
+    HatGlyph.imageset/           # Menu-bar template: HatGlyph.pdf (+ .svg source)
   Services/AppLauncher.swift
   Services/LaunchAtLogin.swift
   Info.plist                     # LSUIElement = true
   EggplantFred.entitlements      # App Sandbox OFF (needed for taps / open apps)
+  scripts/generate_app_icons.py  # Rasterize AppIcon master → appiconset sizes
+docs/
+  README.md                      # Docs index (root README.md is the project readme)
+  commands.md                    # All CLI recipes
+  menu-bar-icon.md               # HatGlyph design spec
+  app-icon.md                    # Dock/Finder rounded-corner icon spec
 ```
+
+## Menu bar icon (HatGlyph) — design spec
+
+→ **[`docs/menu-bar-icon.md`](docs/menu-bar-icon.md)** (sizes, template, PDF/SVG).
 
 ## Commands
 
-```bash
-open EggplantFred.xcodeproj
-# or
-xcodebuild -scheme EggplantFred -configuration Debug -derivedDataPath build build
-open build/Build/Products/Debug/EggplantFred.app
-```
+→ **[`docs/commands.md`](docs/commands.md)** (Debug/Release, `/Applications`, DMG, clean, codesign, Accessibility, icons, logs, defaults).  
+Project readme: [`README.md`](README.md). Docs index: [`docs/README.md`](docs/README.md).
 
 ## Product behaviour to preserve
 

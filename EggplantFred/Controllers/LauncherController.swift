@@ -56,18 +56,57 @@ final class LauncherController: NSObject, ObservableObject {
         guard let panel else { return }
 
         panel.alphaValue = 0
-        // Above other floating panels (e.g. Alfred). `.floating` sits under them.
-        panel.level = .popUpMenu
+        // Alfred-style: `.nonactivatingPanel` becomes key and takes typing
+        // without fighting to be the active app. Calling
+        // `NSApp.activate(ignoringOtherApps:)` here loses to Alfred's own
+        // non-activating key grab.
+        //
+        // Use `.modalPanel` (not `.popUpMenu`): same class of launcher chrome
+        // as Alfred/Spotlight. A higher level permanently covers later Alfred
+        // invocations even when they take keyboard focus.
+        panel.level = .modalPanel
         panel.orderFrontRegardless()
         panel.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         isVisible = true
         NotificationCenter.default.post(name: .launcherDidShow, object: nil)
+        scheduleQueryFieldFocus()
 
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.12
             panel.animator().alphaValue = 1
         }
+    }
+
+    /// SwiftUI `@FocusState` alone is flaky on reopen (already-true is a no-op).
+    /// Drive AppKit first responder after the window is key.
+    private func scheduleQueryFieldFocus() {
+        focusQueryField()
+        DispatchQueue.main.async { [weak self] in
+            self?.focusQueryField()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            self?.focusQueryField()
+        }
+    }
+
+    private func focusQueryField() {
+        guard isVisible, let panel, panel.isVisible else { return }
+        if !panel.isKeyWindow {
+            panel.makeKeyAndOrderFront(nil)
+        }
+        // Already editing — field editor is NSTextView.
+        if panel.firstResponder is NSTextView { return }
+        guard let field = Self.findTextField(in: panel.contentView) else { return }
+        panel.makeFirstResponder(field)
+    }
+
+    private static func findTextField(in root: NSView?) -> NSTextField? {
+        guard let root else { return nil }
+        if let field = root as? NSTextField { return field }
+        for subview in root.subviews {
+            if let found = findTextField(in: subview) { return found }
+        }
+        return nil
     }
 
     func hide() {
@@ -104,12 +143,14 @@ final class LauncherController: NSObject, ObservableObject {
 
         let panel = KeyablePanel(
             contentRect: NSRect(x: 0, y: 0, width: panelWidth, height: compactHeight),
-            styleMask: [.borderless, .fullSizeContentView],
+            // `.nonactivatingPanel` = Alfred/Spotlight path: key + typing without
+            // activating the process (so we don't lose the activation race).
+            styleMask: [.borderless, .fullSizeContentView, .nonactivatingPanel],
             backing: .buffered,
             defer: false
         )
-        // Higher than `.floating` so we stack above Alfred / other launchers.
-        panel.level = .popUpMenu
+        // Peer with Alfred/Spotlight — z-order via orderFront, not a higher level.
+        panel.level = .modalPanel
         panel.isOpaque = false
         panel.backgroundColor = .clear
         // Rectangular AppKit shadow leaves pale square "ears" at the four
@@ -246,6 +287,15 @@ final class LauncherController: NSObject, ObservableObject {
 final class KeyablePanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
+
+    /// Nonactivating panels still need an explicit key claim when ordered front
+    /// from a background accessory app (hotkey path).
+    override func orderFrontRegardless() {
+        super.orderFrontRegardless()
+        if !isKeyWindow {
+            makeKey()
+        }
+    }
 }
 
 /// `NSHostingView` fills its bounds opaquely by default, which shows up as
@@ -288,6 +338,11 @@ private final class ClearHostingView<Content: View>: NSHostingView<Content> {
 }
 
 extension LauncherController: NSWindowDelegate {
+    func windowDidBecomeKey(_ notification: Notification) {
+        guard isVisible else { return }
+        focusQueryField()
+    }
+
     func windowDidResignKey(_ notification: Notification) {
         hideAfterResignIfNeeded()
     }
