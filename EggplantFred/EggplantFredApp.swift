@@ -100,6 +100,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         AppState.shared.start()
+
+        // Finder / Applications open → show search. Login Items → stay quiet (hotkey only).
+        if !LaunchAtLogin.wasLaunchedAtLogin {
+            DispatchQueue.main.async {
+                AppState.shared.launcher.show()
+            }
+        }
+    }
+
+    /// App already running: double-click in Finder / Applications again.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        AppState.shared.launcher.show()
+        return true
     }
 
     func applicationDidBecomeActive(_ notification: Notification) {

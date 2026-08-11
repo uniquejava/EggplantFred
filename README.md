@@ -3,7 +3,7 @@
 Native **macOS 14+** Alfred-style app launcher — menu bar only, SwiftUI + AppKit.
 
 <p align="center">
-  <img src="./docs/app-icon.png" alt="EggplantFred icon" width="128" height="128">
+  <img src="./docs/screenshot.png" alt="EggplantFred launcher searching for Fre" width="640">
 </p>
 
 ## Docs
