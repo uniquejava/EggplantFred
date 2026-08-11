@@ -22,7 +22,7 @@ Inspiration: Alfred General preferences + result list (purple selection, path su
 | Launch | `NSWorkspace.openApplication` |
 | Login item | `SMAppService.mainApp` |
 
-Bundle ID: `com.eggplantfred.EggplantFred`  
+Bundle ID: `click.yinsb.EggplantFred`  
 Team: `DEVELOPMENT_TEAM = M5J7K9HVYB` (Apple Development — keeps Accessibility across rebuilds)  
 Xcode: `EggplantFred.xcodeproj` (scheme `EggplantFred`)
 
@@ -89,7 +89,7 @@ Project readme: [`README.md`](README.md). Docs index: [`docs/README.md`](docs/RE
 ## Known quirks / next polish
 
 - VS Code title may show **Code.app** (CFBundleDisplayName); path still shows `Visual Studio Code.app`. Prefer filename for Alfred-style title if asked.
-- Without Accessibility, global hotkeys do nothing. If checkbox stays on but `AXIsProcessTrusted()` is false: `tccutil reset Accessibility com.eggplantfred.EggplantFred` then re-enable.
+- Without Accessibility, global hotkeys do nothing. If checkbox stays on but `AXIsProcessTrusted()` is false: `tccutil reset Accessibility click.yinsb.EggplantFred` then re-enable.
 - Avoid ad-hoc (“Sign to Run Locally”) for day-to-day runs — use the Development Team signing above.
 - `build/` is gitignored; do not commit DerivedData. Prefer one running instance (Xcode vs `build/` path).
 

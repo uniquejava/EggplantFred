@@ -168,7 +168,7 @@ final class AppState: ObservableObject {
 
         If EggplantFred is already checked in System Settings but hotkeys still fail:
         1. Quit EggplantFred
-        2. Run in Terminal: tccutil reset Accessibility com.eggplantfred.EggplantFred
+        2. Run in Terminal: tccutil reset Accessibility click.yinsb.EggplantFred
         3. Reopen the app and enable it again when prompted
 
         (Ad-hoc rebuilds used to invalidate permission even when the checkbox stayed on. The project now uses your Apple Development certificate so this should stop happening.)
@@ -182,7 +182,7 @@ final class AppState: ObservableObject {
             requestAccessibility()
             openAccessibilitySettings()
         } else if response == .alertSecondButtonReturn {
-            let cmd = "tccutil reset Accessibility com.eggplantfred.EggplantFred"
+            let cmd = "tccutil reset Accessibility click.yinsb.EggplantFred"
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(cmd, forType: .string)
             openAccessibilitySettings()

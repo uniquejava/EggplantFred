@@ -6,7 +6,7 @@ final class AppIndex: ObservableObject {
     @Published private(set) var apps: [AppEntry] = []
     @Published private(set) var isLoading = false
 
-    private let queue = DispatchQueue(label: "com.eggplantfred.appindex", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "click.yinsb.appindex", qos: .userInitiated)
 
     func refresh() {
         isLoading = true

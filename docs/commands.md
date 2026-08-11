@@ -6,7 +6,7 @@ All recipes assume repo root:
 cd /path/to/EggplantFred
 ```
 
-Bundle ID: `com.eggplantfred.EggplantFred`  
+Bundle ID: `click.yinsb.EggplantFred`  
 Scheme: `EggplantFred`  
 DerivedData (local): `build/` (gitignored)
 
@@ -183,7 +183,7 @@ open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibil
 
 # If the checkbox is on but AXIsProcessTrusted() is still false
 # (stale TCC after ad-hoc / path change):
-tccutil reset Accessibility com.eggplantfred.EggplantFred
+tccutil reset Accessibility click.yinsb.EggplantFred
 # Then relaunch the app and enable it again when prompted.
 ```
 
@@ -249,9 +249,9 @@ log stream --style syslog --predicate 'process == "EggplantFred"'
 Persisted by `HotkeySettings` / `HotkeyShortcut` (see code for exact keys). Inspect:
 
 ```bash
-defaults read com.eggplantfred.EggplantFred
+defaults read click.yinsb.EggplantFred
 # Wipe all app defaults (resets prefs including hotkey):
-defaults delete com.eggplantfred.EggplantFred
+defaults delete click.yinsb.EggplantFred
 ```
 
 ---
