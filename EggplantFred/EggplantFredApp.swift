@@ -70,10 +70,12 @@ struct AppStatusMenuContent: View {
     @ObservedObject private var appState = AppState.shared
 
     var body: some View {
-        Button("Open Launcher") {
+        Button("Toggle EggplantFred") {
             appState.launcher.toggle()
         }
-        .keyboardShortcut("l", modifiers: [.command])
+
+        Button(AppStatusMenuLabels.versionLine) {}
+            .disabled(true)
 
         Divider()
 
@@ -88,10 +90,9 @@ struct AppStatusMenuContent: View {
 
         Divider()
 
-        Button("Quit EggplantFred") {
+        Button("Quit") {
             appState.quit()
         }
-        .keyboardShortcut("q", modifiers: [.command])
     }
 }
 

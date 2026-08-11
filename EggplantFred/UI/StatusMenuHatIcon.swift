@@ -111,13 +111,19 @@ enum AppStatusNSMenu {
     static func make() -> NSMenu {
         let menu = NSMenu()
 
-        let open = NSMenuItem(
-            title: "Open Launcher",
-            action: #selector(AppStatusMenuTarget.openLauncher(_:)),
-            keyEquivalent: "l"
+        let toggle = NSMenuItem(
+            title: "Toggle EggplantFred",
+            action: #selector(AppStatusMenuTarget.toggleLauncher(_:)),
+            keyEquivalent: ""
         )
-        open.keyEquivalentModifierMask = [.command]
-        open.target = AppStatusMenuTarget.shared
+        toggle.target = AppStatusMenuTarget.shared
+
+        let version = NSMenuItem(
+            title: AppStatusMenuLabels.versionLine,
+            action: nil,
+            keyEquivalent: ""
+        )
+        version.isEnabled = false
 
         let prefs = NSMenuItem(
             title: "Preferences...",
@@ -128,14 +134,14 @@ enum AppStatusNSMenu {
         prefs.target = AppStatusMenuTarget.shared
 
         let quit = NSMenuItem(
-            title: "Quit EggplantFred",
+            title: "Quit",
             action: #selector(AppStatusMenuTarget.quit(_:)),
-            keyEquivalent: "q"
+            keyEquivalent: ""
         )
-        quit.keyEquivalentModifierMask = [.command]
         quit.target = AppStatusMenuTarget.shared
 
-        menu.addItem(open)
+        menu.addItem(toggle)
+        menu.addItem(version)
         menu.addItem(.separator())
         menu.addItem(prefs)
         menu.addItem(.separator())
@@ -144,11 +150,23 @@ enum AppStatusNSMenu {
     }
 }
 
+enum AppStatusMenuLabels {
+    static var versionLine: String {
+        let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String
+            ?? "EggplantFred"
+        let short = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+            ?? "0.0"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+            ?? "0"
+        return "\(name) \(short) [\(build)]"
+    }
+}
+
 @MainActor
 private final class AppStatusMenuTarget: NSObject {
     static let shared = AppStatusMenuTarget()
 
-    @objc func openLauncher(_ sender: Any?) {
+    @objc func toggleLauncher(_ sender: Any?) {
         AppState.shared.launcher.toggle()
     }
 
