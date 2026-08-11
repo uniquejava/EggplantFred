@@ -10,9 +10,11 @@ Native **macOS 14+** Alfred-style app launcher — menu bar only, SwiftUI + AppK
 
 | Doc | Contents |
 |-----|----------|
-| [docs/commands.md](./docs/commands.md) | Build, run, install, DMG, icons, Accessibility, clean-up |
+| [docs/commands.md](./docs/commands.md) | Build, run, install, DMG, GitHub Release, icons, Accessibility |
 | [docs/menu-bar-icon.md](./docs/menu-bar-icon.md) | Menu bar `HatGlyph` design spec |
 | [docs/app-icon.md](./docs/app-icon.md) | Dock / Finder app icon (rounded corners) |
+
+Download prebuilt DMGs from **[Releases](https://github.com/uniquejava/EggplantFred/releases)** (tag `v*` triggers CI).
 
 ## Requirements
 
@@ -31,7 +33,7 @@ open build/Build/Products/Debug/EggplantFred.app
 
 On first launch, grant **Accessibility** when prompted (or enable it in System Settings → Privacy & Security). Without it, the global hotkey does nothing.
 
-Release build, install to `/Applications`, and DMG packaging: **[docs/commands.md](./docs/commands.md)**.
+Release build, install to `/Applications`, DMG packaging, and tag-based GitHub Release: **[docs/commands.md](./docs/commands.md)**.
 
 ## Features
 

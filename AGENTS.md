@@ -50,9 +50,12 @@ EggplantFred/
   Info.plist                     # LSUIElement = true
   EggplantFred.entitlements      # App Sandbox OFF (needed for taps / open apps)
   scripts/generate_app_icons.py  # Rasterize AppIcon master → appiconset sizes
+.github/workflows/
+  ci.yml                         # PR/main Release build (ad-hoc)
+  release.yml                    # Tag v* → DMG → GitHub Release
 docs/
   README.md                      # Docs index (root README.md is the project readme)
-  commands.md                    # All CLI recipes
+  commands.md                    # All CLI recipes (+ GitHub Release)
   menu-bar-icon.md               # HatGlyph design spec
   app-icon.md                    # Dock/Finder rounded-corner icon spec
 ```
@@ -63,7 +66,8 @@ docs/
 
 ## Commands
 
-→ **[`docs/commands.md`](docs/commands.md)** (Debug/Release, `/Applications`, DMG, clean, codesign, Accessibility, icons, logs, defaults).  
+→ **[`docs/commands.md`](docs/commands.md)** (Debug/Release, `/Applications`, DMG, GitHub Release, clean, codesign, Accessibility, icons, logs, defaults).  
+CI/CD: `.github/workflows/` — push/PR builds; `git tag vX.Y.Z && git push --tags` publishes a DMG Release.  
 Project readme: [`README.md`](README.md). Docs index: [`docs/README.md`](docs/README.md).
 
 ## Product behaviour to preserve

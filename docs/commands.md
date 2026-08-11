@@ -116,6 +116,30 @@ xattr -cr build/EggplantFred-*.dmg
 
 ---
 
+## GitHub Release (CI/CD)
+
+Workflows live in `.github/workflows/`:
+
+| Workflow | Trigger | What it does |
+|----------|---------|--------------|
+| `ci.yml` | Push / PR to `main` | Release build (ad-hoc signed) |
+| `release.yml` | Tag `v*` (or manual dispatch) | Archive → DMG → GitHub Release |
+
+Bump `MARKETING_VERSION` in `EggplantFred.xcodeproj` (Info.plist uses `$(MARKETING_VERSION)`), commit, then:
+
+```bash
+git tag v0.1.0
+git push origin main
+git push origin v0.1.0
+```
+
+Actions builds `EggplantFred-v0.1.0.dmg` (ad-hoc signed, not notarized) and attaches it to the [Releases](https://github.com/uniquejava/EggplantFred/releases) page.  
+Gatekeeper may warn; after install: `xattr -cr /Applications/EggplantFred.app`.
+
+Re-run without a new tag: Actions → **Release** → **Run workflow** → enter tag (e.g. `v0.1.0`).
+
+---
+
 ## Clean
 
 ```bash
