@@ -16,6 +16,7 @@ Reference: [Apple HIG — App icons](https://developer.apple.com/design/human-in
 | Shape | Continuous rounded rect, corner radius ≈ **22.37%** of edge (Big Sur+ grid) |
 | Corners | **Transparent** outside the rounded rect |
 | Sizes | All `mac` idiom 16…512 @1x/@2x via `scripts/generate_app_icons.py` |
+| Art (this app) | Cream hat on a purple field — **Fred-only**. Shape/mask rules above may be reused by sibling apps; the purple fill is **not** a shared Eggplant brand requirement. |
 
 The generator applies the mask if the master still has opaque corners.
 

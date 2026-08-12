@@ -7,8 +7,18 @@ final class AppIndex: ObservableObject {
     @Published private(set) var isLoading = false
 
     private let queue = DispatchQueue(label: "click.yinsb.appindex", qos: .userInitiated)
+    private var lastRefreshAt: Date?
+    /// Avoid rescanning on rapid open/close; force bypasses this.
+    private let minimumRefreshInterval: TimeInterval = 2
 
-    func refresh() {
+    func refresh(force: Bool = false) {
+        if isLoading { return }
+        if !force,
+           let lastRefreshAt,
+           Date().timeIntervalSince(lastRefreshAt) < minimumRefreshInterval {
+            return
+        }
+        lastRefreshAt = Date()
         isLoading = true
         queue.async { [weak self] in
             let scanned = ApplicationScanner.scan()

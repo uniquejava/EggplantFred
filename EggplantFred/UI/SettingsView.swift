@@ -3,6 +3,26 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
+
+    var body: some View {
+        TabView {
+            GeneralSettingsPane()
+                .environmentObject(appState)
+                .tabItem {
+                    Label("General", systemImage: "gearshape")
+                }
+
+            AboutView()
+                .tabItem {
+                    Label("About", systemImage: "info.circle")
+                }
+        }
+        .frame(width: 560, height: 320)
+    }
+}
+
+private struct GeneralSettingsPane: View {
+    @EnvironmentObject private var appState: AppState
     @State private var launchAtLoginEnabled = LaunchAtLogin.isEnabled
     @State private var launchAtLoginError: String?
 
@@ -17,7 +37,7 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 28)
         .padding(.vertical, 28)
-        .frame(width: 560, height: 320)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear {
             appState.refreshAccessibilityStatus()

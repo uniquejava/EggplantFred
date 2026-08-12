@@ -48,6 +48,8 @@ final class LauncherController: NSObject, ObservableObject {
 
     func show() {
         guard let appIndex else { return }
+        // Pick up apps installed since last scan (no restart required).
+        appIndex.refresh()
         if panel == nil {
             createPanel(appIndex: appIndex)
         }
