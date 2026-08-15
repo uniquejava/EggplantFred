@@ -40,7 +40,7 @@ xcodebuild -scheme EggplantFred -configuration Debug -derivedDataPath build buil
 open build/Build/Products/Debug/EggplantFred.app
 ```
 
-Release build, install to `/Applications`, DMG packaging, and tag-based GitHub Release: **[docs/commands.md](docs/commands.md)**.
+Release build, install to Applications, and DMG packaging: **[docs/commands.md](docs/commands.md)**.
 
 ## Docs
 
