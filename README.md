@@ -4,7 +4,7 @@ Native **macOS 14+** Alfred-style app launcher — menu bar only, SwiftUI + AppK
 
 [简体中文](./README_zh.md)
 
-Prebuilt DMGs are on **[Releases](https://github.com/uniquejava/EggplantFred/releases)** — push a `v*` tag to build one.
+Download prebuilt DMGs from **[Releases](https://github.com/uniquejava/EggplantFred/releases)**.
 
 <p align="center">
   <img src="./docs/screenshot.png" alt="EggplantFred launcher searching for Fre" width="640">

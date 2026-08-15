@@ -4,7 +4,7 @@
 
 [English](./README.md)
 
-预编译 DMG 见 **[Releases](https://github.com/uniquejava/EggplantFred/releases)** — 推送 `v*` 标签即可自动打包。
+预编译安装包见 **[Releases](https://github.com/uniquejava/EggplantFred/releases)**。
 
 <p align="center">
   <img src="./docs/screenshot.png" alt="EggplantFred 启动器搜索 Fre" width="640">
@@ -40,7 +40,7 @@ xcodebuild -scheme EggplantFred -configuration Debug -derivedDataPath build buil
 open build/Build/Products/Debug/EggplantFred.app
 ```
 
-Release 构建、安装到 `/Applications`、打 DMG、打标签发 GitHub Release：见 **[docs/commands.md](docs/commands.md)**。
+正式版构建、安装到「应用程序」、打 DMG 等步骤见 **[docs/commands.md](docs/commands.md)**。
 
 ## 文档
 
