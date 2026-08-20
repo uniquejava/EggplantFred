@@ -49,23 +49,28 @@ enum ApplicationScanner {
 
         for root in roots {
             guard fileManager.fileExists(atPath: root.path) else { continue }
+            // Do not use .skipsHiddenFiles: cryptex symlinks like /Applications/Safari.app
+            // are reported as isHidden=true and would be skipped.
             let enumerator = fileManager.enumerator(
                 at: root,
-                includingPropertiesForKeys: [.isApplicationKey, .isDirectoryKey],
-                options: [.skipsHiddenFiles, .skipsPackageDescendants]
+                includingPropertiesForKeys: [.isApplicationKey, .isDirectoryKey, .isSymbolicLinkKey],
+                options: [.skipsPackageDescendants]
             )
 
             while let item = enumerator?.nextObject() as? URL {
+                if item.lastPathComponent.hasPrefix(".") { continue }
                 guard item.pathExtension == "app" else { continue }
-                let path = item.path
+                // Resolve cryptex / alias symlinks so Bundle + launch use the real package.
+                let appURL = item.resolvingSymlinksInPath()
+                let path = appURL.path
                 guard seen.insert(path).inserted else { continue }
 
                 results.append(
                     AppEntry(
                         id: path,
-                        name: displayName(for: item),
+                        name: displayName(for: appURL),
                         path: path,
-                        url: item
+                        url: appURL
                     )
                 )
             }
